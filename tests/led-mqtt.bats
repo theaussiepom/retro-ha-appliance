@@ -70,15 +70,17 @@ teardown() {
 	source "$BATS_TEST_DIRNAME/../scripts/leds/led-mqtt.sh"
 	run mosq_args
 	assert_success
-	assert_output --partial "-h"
-	assert_output --partial "mqtt.local"
-	assert_output --partial "-p"
-	assert_output --partial "1884"
-	assert_output --partial "-u"
-	assert_output --partial "u"
-	assert_output --partial "-P"
-	assert_output --partial "p"
-	assert_output --partial "--tls-version"
+
+	# Avoid relying on bats-assert's multiline matching; just grep tokens.
+	/usr/bin/grep -Fq -- "-h" <<<"$output"
+	/usr/bin/grep -Fq -- "mqtt.local" <<<"$output"
+	/usr/bin/grep -Fq -- "-p" <<<"$output"
+	/usr/bin/grep -Fq -- "1884" <<<"$output"
+	/usr/bin/grep -Fq -- "-u" <<<"$output"
+	/usr/bin/grep -Fq -- "u" <<<"$output"
+	/usr/bin/grep -Fq -- "-P" <<<"$output"
+	/usr/bin/grep -Fq -- "p" <<<"$output"
+	/usr/bin/grep -Fq -- "--tls-version" <<<"$output"
 }
 
 @test "led-mqtt handle_set ignores unknown payload" {

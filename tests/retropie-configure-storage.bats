@@ -34,7 +34,7 @@ teardown() {
 	rm -f "$TEST_ROOT/opt/retropie/configs/all/retroarch.cfg"
 	run bash "$BATS_TEST_DIRNAME/../scripts/retropie/configure-retropie-storage.sh"
 	assert_success
-	assert_output --partial "RetroArch config not found"
+	/usr/bin/grep -Fq -- "RetroArch config not found" <<<"$output"
 }
 
 @test "configure-retropie-storage fails when not root and non-root is not allowed" {

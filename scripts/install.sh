@@ -106,7 +106,8 @@ install_files() {
   # Install scripts (only those that exist today).
   if [[ -d "$repo_root/scripts/leds" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/leds/ledctl.sh" "$lib_dir/ledctl.sh"
-    run_cmd install -m 0755 "$repo_root/scripts/leds/led-mqtt.sh" "$bin_dir/retro-ha-led-mqtt.sh"
+    run_cmd install -m 0755 "$repo_root/scripts/leds/led-mqtt.sh" "$lib_dir/retro-ha-led-mqtt.sh"
+    run_cmd ln -sf "$lib_dir/retro-ha-led-mqtt.sh" "$bin_dir/retro-ha-led-mqtt.sh"
   fi
 
   if [[ -f "$repo_root/scripts/mode/ha-kiosk.sh" ]]; then
