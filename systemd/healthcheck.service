@@ -1,0 +1,7 @@
+[Unit]
+Description=Appliance healthcheck
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/healthcheck.sh

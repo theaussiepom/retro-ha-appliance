@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodic save/state backup (optional)
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=6h
+AccuracySec=5min
+Persistent=true
+Unit=save-backup.service
+
+[Install]
+WantedBy=timers.target

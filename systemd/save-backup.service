@@ -1,0 +1,9 @@
+[Unit]
+Description=Backup RetroPie saves/states to NFS (optional)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/save-backup.sh

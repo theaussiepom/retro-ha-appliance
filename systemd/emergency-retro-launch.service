@@ -1,0 +1,13 @@
+[Unit]
+Description=Emergency RetroPie launch listener (TTY)
+After=multi-user.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/controller-listener-tty.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,14 @@
+[Unit]
+Description=Controller listener active during HA kiosk mode
+After=ha-kiosk.service
+Requires=ha-kiosk.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/controller-listener-ha-mode.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=ha-kiosk.service

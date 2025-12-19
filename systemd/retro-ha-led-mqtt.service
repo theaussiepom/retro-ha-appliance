@@ -1,0 +1,18 @@
+[Unit]
+Description=retro-ha LED control via MQTT
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/bin/retro-ha-led-mqtt.sh
+Restart=on-failure
+RestartSec=2
+
+# Keep logs in journald (stdout/stderr).
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

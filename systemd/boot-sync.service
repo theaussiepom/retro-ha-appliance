@@ -1,0 +1,12 @@
+[Unit]
+Description=Boot-time ROM sync (optional)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/sync-roms.sh
+
+[Install]
+WantedBy=multi-user.target
