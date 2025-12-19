@@ -22,6 +22,7 @@ mkdir -p "$out_dir"
 
 kcov_help="$(kcov --help 2>&1 || true)"
 bash_parser_flag=""
+parse_dirs_flag=""
 if grep -Fq -- '--bash-parser' <<<"$kcov_help"; then
   bash_parser_flag="--bash-parser"
 elif grep -Fq -- '--bash-parse' <<<"$kcov_help"; then
@@ -29,8 +30,13 @@ elif grep -Fq -- '--bash-parse' <<<"$kcov_help"; then
   bash_parser_flag=""
 fi
 
+if grep -Fq -- '--bash-parse-files-in-dirs' <<<"$kcov_help"; then
+  parse_dirs_flag="--bash-parse-files-in-dirs=$ROOT_DIR/scripts"
+fi
+
 exec kcov \
   ${bash_parser_flag:+"$bash_parser_flag"} \
+  ${parse_dirs_flag:+"$parse_dirs_flag"} \
   --include-path="$ROOT_DIR/scripts" \
   --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor" \
   "$out_dir" \
