@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+calls_file="${RETRO_HA_CALLS_FILE:-/dev/null}"
+printf 'flock %q\n' "$*" >>"$calls_file" || true
+
+# Always succeed in unit tests.
+exit 0

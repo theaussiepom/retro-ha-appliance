@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Minimal id stub for scripts that check for retropi.
+if [[ "${1:-}" == "-u" && "${2:-}" == "retropi" ]]; then
+	echo 1000
+	exit 0
+fi
+
+# Fallback to the real id.
+exec /usr/bin/id "$@"

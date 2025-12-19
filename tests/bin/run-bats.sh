@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Ensure a sane PATH even if the calling shell mutated it.
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+"$ROOT_DIR/tests/bin/fetch-bats.sh" >/dev/null
+
+export BATS_LIB_PATH="$ROOT_DIR/tests/vendor"
+
+# Stable path-coverage log shared across Bats invocations.
+PATHS_LOG="${RETRO_HA_PATHS_FILE:-$ROOT_DIR/tests/.tmp/retro-ha-paths.log}"
+mkdir -p "$(dirname "$PATHS_LOG")"
+rm -f "$PATHS_LOG"
+export RETRO_HA_PATHS_FILE="$PATHS_LOG"
+
+test_files=("$ROOT_DIR/tests"/*.bats)
+exec "$ROOT_DIR/tests/vendor/bats-core/bin/bats" "${test_files[@]}" "$@"

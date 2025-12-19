@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+calls_file="${RETRO_HA_CALLS_FILE:-/dev/null}"
+printf 'getent %q\n' "$*" >>"$calls_file" || true
+
+if [[ "${1:-}" == "hosts" ]]; then
+	exit "${GETENT_HOSTS_EXIT_CODE:-${GETENT_EXIT_CODE:-0}}"
+fi
+
+if [[ "${1:-}" == "passwd" ]]; then
+	user="${2:-}"
+	if [[ "$user" == "retropi" ]]; then
+		echo "${GETENT_PASSWD_RETROPI_LINE:-retropi:x:1000:1000::/home/retropi:/bin/bash}"
+		exit 0
+	fi
+	exit 2
+fi
+
+exit "${GETENT_EXIT_CODE:-0}"

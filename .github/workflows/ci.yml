@@ -1,0 +1,220 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    name: shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Bash syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(scripts/**/*.sh)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shell scripts found under scripts/**/*.sh, skipping."
+            exit 0
+          fi
+
+          for f in "${files[@]}"; do
+            echo "bash -n $f"
+            bash -n "$f"
+          done
+
+      - name: Shellcheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(scripts/**/*.sh)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shell scripts found under scripts/**/*.sh, skipping."
+            exit 0
+          fi
+
+          shellcheck "${files[@]}"
+
+      - name: Setup shfmt
+        uses: mfinelli/setup-shfmt@v3
+
+      - name: Enforce shfmt formatting
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(scripts/**/*.sh)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No shell scripts found under scripts/**/*.sh, skipping."
+            exit 0
+          fi
+
+          shfmt -d -i 2 -ci -sr "${files[@]}"
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y kcov
+
+      - name: Run tests (show Bats output)
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/tests/bin/run-bats.sh"
+
+      - name: Run tests under kcov
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/tests/bin/run-bats-kcov.sh"
+
+      - name: Enforce 100% line coverage
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/tests/bin/assert-kcov-100.sh"
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kcov-coverage
+          path: coverage/
+
+  yaml:
+    name: yaml
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: |
+          python -m pip install --upgrade pip
+          pip install yamllint
+
+      - name: Yamllint
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(
+            .github/**/*.yml
+            .github/**/*.yaml
+            cloud-init/**/*.yml
+            cloud-init/**/*.yaml
+            examples/**/*.yml
+            examples/**/*.yaml
+          )
+
+          existing=()
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              existing+=("$f")
+            fi
+          done
+
+          if [ ${#existing[@]} -eq 0 ]; then
+            echo "No YAML files found in expected locations, skipping."
+            exit 0
+          fi
+
+          yamllint -c .yamllint.yml "${existing[@]}"
+
+  systemd:
+    name: systemd
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify systemd units
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          units=(
+            systemd/**/*.service
+            systemd/**/*.timer
+            systemd/**/*.target
+            systemd/**/*.path
+            systemd/**/*.socket
+            systemd/**/*.mount
+          )
+
+          existing=()
+          for u in "${units[@]}"; do
+            if [ -f "$u" ]; then
+              existing+=("$u")
+            fi
+          done
+
+          if [ ${#existing[@]} -eq 0 ]; then
+            echo "No systemd unit files found under systemd/, skipping."
+            exit 0
+          fi
+
+          for u in "${existing[@]}"; do
+            echo "systemd-analyze verify $u"
+            systemd-analyze verify "$u"
+          done
+
+  markdown:
+    name: markdown
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install markdownlint
+        run: |
+          npm install -g markdownlint-cli
+
+      - name: Markdownlint
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(
+            README.md
+            CHANGELOG.md
+            CONTRIBUTING.md
+            CODE_OF_CONDUCT.md
+            docs/**/*.md
+          )
+
+          existing=()
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              existing+=("$f")
+            fi
+          done
+
+          if [ ${#existing[@]} -eq 0 ]; then
+            echo "No markdown files found, skipping."
+            exit 0
+          fi
+
+          markdownlint -c .markdownlint.json "${existing[@]}"
