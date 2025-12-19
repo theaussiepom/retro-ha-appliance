@@ -141,7 +141,7 @@ main() {
   mosquitto_sub "${args[@]}" -v -t "$topic_filter" | while read -r topic payload; do
     # topic: <prefix>/led/<target>/set
     local target
-    target="${topic#${prefix}/led/}"
+    target="${topic#"${prefix}/led/"}"
     target="${target%/set}"
 
     case "$target" in

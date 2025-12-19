@@ -113,10 +113,10 @@ main() {
 		cover_path "sync-roms:discover"
 		# Discover system directories on the share.
 		local entry
-		while IFS= read -r entry; do
+		while IFS= read -r -d '' entry; do
 			[[ -d "$src/$entry" ]] || continue
 			systems+=("$entry")
-		done < <(ls -1 "$src" 2>/dev/null | sort)
+		done < <(find "$src" -mindepth 1 -maxdepth 1 -type d -printf '%f\0' 2>/dev/null | sort -z)
 	fi
 
 	local system

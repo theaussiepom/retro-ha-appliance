@@ -37,7 +37,7 @@ EOF
 
 led_sysfs_dir() {
   local led_name="$1"
-  echo "$(retro_ha_path "/sys/class/leds/${led_name}")"
+  retro_ha_path "/sys/class/leds/${led_name}"
 }
 
 set_led_off() {

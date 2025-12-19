@@ -11,7 +11,7 @@ retro_ha_config_env_path() {
 		echo "$configured"
 		return 0
 	fi
-	echo "$(retro_ha_path /etc/retro-ha/config.env)"
+	retro_ha_path "/etc/retro-ha/config.env"
 }
 
 load_config_env() {
