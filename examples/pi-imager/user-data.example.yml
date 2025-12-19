@@ -1,6 +1,8 @@
+# yamllint disable rule:document-start rule:comments
 #cloud-config
 # Example Pi Imager user-data.
 # Copy/adjust for your environment.
+# yamllint enable rule:document-start rule:comments
 
 write_files:
   - path: /etc/retro-ha/config.env

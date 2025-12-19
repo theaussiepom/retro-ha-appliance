@@ -7,6 +7,5 @@ rules:
     allow-non-breakable-inline-mappings: true
   truthy:
     allowed-values: ["true", "false", "on", "off", "yes", "no"]
-  document-start: disable
   comments:
-    min-spaces-from-content: 0
+    min-spaces-from-content: 1
