@@ -34,6 +34,21 @@ teardown() {
 	assert_file_contains "$TEST_ROOT/calls.log" "exec xinit"
 }
 
+@test "ha-kiosk writes xinitrc when not dry-run" {
+	export HA_URL="http://example.local"
+	export RETRO_HA_DRY_RUN=0
+
+	# Use isolated path so we control chromium and xinit.
+	make_isolated_path_with_stubs dirname chromium-browser xinit
+
+	run /bin/bash "$BATS_TEST_DIRNAME/../scripts/mode/ha-kiosk.sh"
+	assert_success
+
+	# xinitrc should be written in the runtime dir.
+	[ -f "$XDG_RUNTIME_DIR/retro-ha/ha-xinitrc" ]
+	assert_file_contains "$XDG_RUNTIME_DIR/retro-ha/ha-xinitrc" 'exec "chromium-browser"'
+}
+
 @test "ha-kiosk fails if no chromium binary" {
 	export HA_URL="http://example.local"
 	make_isolated_path_with_stubs dirname xinit getent id
@@ -62,4 +77,15 @@ teardown() {
 	assert_success
 	assert_file_contains "$TEST_ROOT/calls.log" "write_file $XDG_RUNTIME_DIR/retro-ha/retro-xinitrc"
 	assert_file_contains "$TEST_ROOT/calls.log" "exec xinit"
+}
+
+@test "retro-mode writes xinitrc when not dry-run" {
+	export RETRO_HA_DRY_RUN=0
+	make_isolated_path_with_stubs dirname xinit emulationstation
+
+	run /bin/bash "$BATS_TEST_DIRNAME/../scripts/mode/retro-mode.sh"
+	assert_success
+
+	[ -f "$XDG_RUNTIME_DIR/retro-ha/retro-xinitrc" ]
+	assert_file_contains "$XDG_RUNTIME_DIR/retro-ha/retro-xinitrc" 'exec /usr/bin/emulationstation'
 }

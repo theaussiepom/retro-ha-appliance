@@ -82,7 +82,7 @@ fi
 
 # Optional rotation (xrandr names: normal,left,right,inverted).
 if [[ -n "${RETRO_HA_SCREEN_ROTATION:-}" ]] && command -v xrandr >/dev/null 2>&1; then
-  xrandr -o "${RETRO_HA_SCREEN_ROTATION}" || true
+  xrandr -o "${RETRO_HA_SCREEN_ROTATION:-}" || true
 fi
 
 exec "$chromium" \
