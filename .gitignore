@@ -1,0 +1,17 @@
+
+.DS_Store
+
+# Editors
+.vscode/
+*.swp
+*~
+
+# Test dependencies (cloned by tests/bin/fetch-bats.sh)
+tests/vendor/
+
+# Test runtime artifacts
+tests/.tmp/
+
+# Local test artifacts
+.tmp/
+.tmp-bats-trace.txt
