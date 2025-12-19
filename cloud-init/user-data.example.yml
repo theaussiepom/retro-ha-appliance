@@ -1,4 +1,5 @@
 #cloud-config
+---
 # Example cloud-init for Raspberry Pi Imager.
 # Write your real values into /etc/retro-ha/config.env.
 
@@ -90,6 +91,6 @@ write_files:
       WantedBy=multi-user.target
 
 runcmd:
-  - [ bash, -lc, 'apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git' ]
-  - [ bash, -lc, 'systemctl daemon-reload' ]
-  - [ bash, -lc, 'systemctl enable --now retro-ha-install.service' ]
+  - [bash, -lc, 'apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git']
+  - [bash, -lc, 'systemctl daemon-reload']
+  - [bash, -lc, 'systemctl enable --now retro-ha-install.service']

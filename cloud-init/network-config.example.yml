@@ -1,4 +1,5 @@
 # Example network-config (optional)
+---
 version: 2
 ethernets: {}
 wifis:

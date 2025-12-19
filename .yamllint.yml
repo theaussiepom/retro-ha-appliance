@@ -1,5 +1,13 @@
 extends: default
 
+overrides:
+  cloud-init/user-data.example.yml:
+    rules:
+      comments: disable
+  examples/pi-imager/user-data.example.yml:
+    rules:
+      comments: disable
+
 rules:
   line-length:
     max: 120
