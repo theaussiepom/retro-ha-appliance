@@ -57,8 +57,8 @@ mosq_args() {
 }
 
 publish_state() {
-  local target="$1"   # act|pwr
-  local payload="$2"  # ON|OFF
+  local target="$1"  # act|pwr
+  local payload="$2" # ON|OFF
   local prefix="$3"
 
   cover_path "led-mqtt:publish-state"
@@ -75,21 +75,21 @@ publish_state() {
 }
 
 handle_set() {
-  local target="$1"   # act|pwr|all
+  local target="$1" # act|pwr|all
   local payload_raw="$2"
   local prefix="$3"
 
   local payload
-  payload="$(tr '[:lower:]' '[:upper:]' <<<"$payload_raw")"
+  payload="$(tr '[:lower:]' '[:upper:]' <<< "$payload_raw")"
 
   local state
   case "$payload" in
-  ON) state="on" ;;
-  OFF) state="off" ;;
-  *)
-    log "Ignoring payload '$payload_raw' for target '$target'"
-    return 0
-    ;;
+    ON) state="on" ;;
+    OFF) state="off" ;;
+    *)
+      log "Ignoring payload '$payload_raw' for target '$target'"
+      return 0
+      ;;
   esac
 
   if [[ ! -x "$LEDCTL_PATH" ]]; then
@@ -100,13 +100,13 @@ handle_set() {
 
   # Publish retained state for HA UI.
   case "$target" in
-  act | pwr)
-    publish_state "$target" "$payload" "$prefix"
-    ;;
-  all)
-    publish_state "act" "$payload" "$prefix" || true
-    publish_state "pwr" "$payload" "$prefix" || true
-    ;;
+    act | pwr)
+      publish_state "$target" "$payload" "$prefix"
+      ;;
+    all)
+      publish_state "act" "$payload" "$prefix" || true
+      publish_state "pwr" "$payload" "$prefix" || true
+      ;;
   esac
 }
 
@@ -145,12 +145,12 @@ main() {
     target="${target%/set}"
 
     case "$target" in
-    act | pwr | all)
-      handle_set "$target" "$payload" "$prefix" || true
-      ;;
-    *)
-      log "Ignoring unknown target '$target' (topic: $topic)"
-      ;;
+      act | pwr | all)
+        handle_set "$target" "$payload" "$prefix" || true
+        ;;
+      *)
+        log "Ignoring unknown target '$target' (topic: $topic)"
+        ;;
     esac
   done
 }

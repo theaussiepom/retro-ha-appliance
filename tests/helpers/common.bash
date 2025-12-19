@@ -37,10 +37,16 @@ make_isolated_path_with_stubs() {
 	mkdir -p "$bin_dir"
 
 	# Provide a small set of core utilities that bats + our tests rely on.
-	# This avoids adding /usr/bin to PATH (which would make it hard to test
-	# missing-dependency branches for tools like git/sudo).
 	# Use symlinks to the real binaries (don't copy system binaries into $TEST_ROOT).
-	local core_tools=(env bash sh cat rm mkdir rmdir cut grep sed awk tr sort ls date mktemp head tail)
+	# IMPORTANT: Do not add /bin to PATH here. On some distros /bin is a symlink to
+	# /usr/bin, which would leak host tools (e.g. chromium) into "missing dependency"
+	# tests.
+	local core_tools=(
+		env bash sh
+		cat rm mkdir rmdir mv cp ln chmod touch
+		cut grep sed awk tr sort
+		date mktemp head tail
+	)
 	local t src
 	for t in "${core_tools[@]}"; do
 		src=""
@@ -60,9 +66,8 @@ make_isolated_path_with_stubs() {
 		chmod +x "$bin_dir/$stub"
 	done
 
-	# Expose our curated toolset + /bin (core utilities), but keep /usr/bin hidden
-	# so we can still test missing deps like git/sudo.
-	export PATH="$bin_dir:/bin"
+	# Expose only our curated toolset.
+	export PATH="$bin_dir"
 }
 
 teardown_test_root() {

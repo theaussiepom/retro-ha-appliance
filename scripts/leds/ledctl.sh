@@ -19,7 +19,7 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 usage() {
-  cat <<'EOF'
+  cat << 'EOF'
 Usage:
   ledctl.sh (act|pwr|all) (on|off)
 
@@ -50,8 +50,8 @@ set_led_off() {
     return 1
   fi
 
-  echo none >"$dir/trigger"
-  echo 0 >"$dir/brightness"
+  echo none > "$dir/trigger"
+  echo 0 > "$dir/brightness"
 }
 
 trigger_supported() {
@@ -63,8 +63,8 @@ trigger_supported() {
   # Example trigger file content: "none [mmc0] timer heartbeat ..."
   # We match whole words, ignoring [brackets].
   local normalized
-  normalized="$(tr -d '[]' <"$trigger_file")"
-  grep -Eq "(^|[[:space:]])${desired}([[:space:]]|$)" <<<"$normalized"
+  normalized="$(tr -d '[]' < "$trigger_file")"
+  grep -Eq "(^|[[:space:]])${desired}([[:space:]]|$)" <<< "$normalized"
 }
 
 set_led_on() {
@@ -85,11 +85,11 @@ set_led_on() {
   fi
 
   # Ensure the LED is lit even if trigger restore fails.
-  echo none >"$dir/trigger"
-  echo 1 >"$dir/brightness"
+  echo none > "$dir/trigger"
+  echo 1 > "$dir/brightness"
 
   if [[ "$supported" == "1" ]]; then
-    echo "$desired_trigger" >"$dir/trigger"
+    echo "$desired_trigger" > "$dir/trigger"
   fi
 }
 
@@ -112,23 +112,23 @@ main() {
   local pwr_on_trigger="${RETRO_HA_PWR_LED_TRIGGER_ON:-default-on}"
 
   case "$which" in
-  act | pwr | all) ;;
-  *)
-    cover_path "ledctl:invalid-target"
-    echo "Invalid target: $which" >&2
-    usage >&2
-    exit 2
-    ;;
+    act | pwr | all) ;;
+    *)
+      cover_path "ledctl:invalid-target"
+      echo "Invalid target: $which" >&2
+      usage >&2
+      exit 2
+      ;;
   esac
 
   case "$state" in
-  on | off) ;;
-  *)
-    cover_path "ledctl:invalid-state"
-    echo "Invalid state: $state" >&2
-    usage >&2
-    exit 2
-    ;;
+    on | off) ;;
+    *)
+      cover_path "ledctl:invalid-state"
+      echo "Invalid state: $state" >&2
+      usage >&2
+      exit 2
+      ;;
   esac
 
   if [[ "$which" == "act" || "$which" == "all" ]]; then

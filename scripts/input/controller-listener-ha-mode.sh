@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec python3 - <<'PY'
+exec python3 - << 'PY'
 import glob
 import os
 import selectors

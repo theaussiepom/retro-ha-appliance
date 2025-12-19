@@ -29,7 +29,7 @@ source "$LIB_DIR/config.sh"
 
 network_ok() {
   # DNS + HTTPS reachability (kept simple).
-  getent hosts github.com >/dev/null 2>&1 && curl -fsS https://github.com >/dev/null 2>&1
+  getent hosts github.com > /dev/null 2>&1 && curl -fsS https://github.com > /dev/null 2>&1
 }
 
 main() {
@@ -75,12 +75,12 @@ main() {
   fi
 
   log "Running installer"
-    if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
-  	  record_call "exec $checkout_dir/scripts/install.sh"
-  	  exit 0
-    fi
+  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+    record_call "exec $checkout_dir/scripts/install.sh"
+    exit 0
+  fi
 
-    exec "$checkout_dir/scripts/install.sh"
+  exec "$checkout_dir/scripts/install.sh"
 }
 
 if ! retro_ha_is_sourced; then

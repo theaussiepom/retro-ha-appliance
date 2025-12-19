@@ -24,11 +24,11 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 chromium_bin() {
-  if command -v chromium-browser >/dev/null 2>&1; then
+  if command -v chromium-browser > /dev/null 2>&1; then
     echo chromium-browser
     return 0
   fi
-  if command -v chromium >/dev/null 2>&1; then
+  if command -v chromium > /dev/null 2>&1; then
     echo chromium
     return 0
   fi
@@ -67,9 +67,9 @@ main() {
   run_cmd mkdir -p "$profile_dir"
 
   if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
-	  record_call "write_file $xinitrc"
-	else
-  cat >"$xinitrc" <<EOF
+    record_call "write_file $xinitrc"
+  else
+    cat > "$xinitrc" << EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -95,7 +95,7 @@ exec "$chromium" \
   --user-data-dir="$profile_dir" \
   "$HA_URL"
 EOF
-	fi
+  fi
 
   run_cmd chmod 0755 "$xinitrc"
 
@@ -108,8 +108,8 @@ EOF
   #   xinit <client> -- <server> <display> [server-args...]
   if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
     cover_path "ha-kiosk:dry-run"
-	  record_call "exec xinit $xinitrc -- /usr/lib/xorg/Xorg $x_display vt${vt} -nolisten tcp -keeptty"
-	  exit 0
+    record_call "exec xinit $xinitrc -- /usr/lib/xorg/Xorg $x_display vt${vt} -nolisten tcp -keeptty"
+    exit 0
   fi
 
   exec xinit "$xinitrc" -- /usr/lib/xorg/Xorg "$x_display" "vt${vt}" -nolisten tcp -keeptty

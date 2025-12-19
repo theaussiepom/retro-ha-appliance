@@ -28,12 +28,12 @@ main() {
 
   # This will be fully implemented once RetroPie is installed.
   # For now we try to launch EmulationStation if present.
-  if ! command -v xinit >/dev/null 2>&1; then
+  if ! command -v xinit > /dev/null 2>&1; then
     cover_path "retro-mode:missing-xinit"
     die "xinit not found"
   fi
 
-  if ! command -v emulationstation >/dev/null 2>&1; then
+  if ! command -v emulationstation > /dev/null 2>&1; then
     # During early bring-up RetroPie may not be installed yet. Don't thrash systemd.
     cover_path "retro-mode:missing-emulationstation"
     log "emulationstation not found (RetroPie not installed yet); exiting"
@@ -52,9 +52,9 @@ main() {
   local xinitrc="${state_dir}/retro-xinitrc"
 
   if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
-	  record_call "write_file $xinitrc"
-	else
-  cat >"$xinitrc" <<EOF
+    record_call "write_file $xinitrc"
+  else
+    cat > "$xinitrc" << EOF
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -72,7 +72,7 @@ fi
 
 exec /usr/bin/emulationstation
 EOF
-	fi
+  fi
 
   run_cmd chmod 0755 "$xinitrc"
 
@@ -81,8 +81,8 @@ EOF
 
   if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
     cover_path "retro-mode:dry-run"
-	  record_call "exec xinit $xinitrc -- /usr/lib/xorg/Xorg $x_display vt${vt} -nolisten tcp -keeptty"
-	  exit 0
+    record_call "exec xinit $xinitrc -- /usr/lib/xorg/Xorg $x_display vt${vt} -nolisten tcp -keeptty"
+    exit 0
   fi
 
   exec xinit "$xinitrc" -- /usr/lib/xorg/Xorg "$x_display" "vt${vt}" -nolisten tcp -keeptty
