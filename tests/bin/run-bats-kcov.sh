@@ -34,10 +34,20 @@ if grep -Fq -- '--bash-parse-files-in-dirs' <<<"$kcov_help"; then
   parse_dirs_flag="--bash-parse-files-in-dirs=$ROOT_DIR/scripts"
 fi
 
-exec kcov \
-  ${bash_parser_flag:+"$bash_parser_flag"} \
-  ${parse_dirs_flag:+"$parse_dirs_flag"} \
-  --include-path="$ROOT_DIR/scripts" \
-  --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor" \
-  "$out_dir" \
-  "$ROOT_DIR/tests/bin/run-bats-with-kcov-driver.sh" "$@"
+common_args=(
+  ${bash_parser_flag:++"$bash_parser_flag"}
+  ${parse_dirs_flag:++"$parse_dirs_flag"}
+  --include-path="$ROOT_DIR/scripts"
+  --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor"
+)
+
+# kcov bash coverage can behave differently depending on whether the traced
+# process exec()s into bats. To keep the original behavior (which already
+# captured coverage from the Bats suite), run Bats under kcov as its own run.
+kcov "${common_args[@]}" "$out_dir/bats" "$ROOT_DIR/tests/bin/run-bats.sh" "$@"
+
+# Run additional “line coverage” driver paths under kcov.
+kcov "${common_args[@]}" "$out_dir/driver" "$ROOT_DIR/tests/bin/kcov-line-coverage-driver.sh"
+
+# Merge into a stable location consumed by assert-kcov-100.sh.
+kcov --merge "$out_dir/kcov-merged" "$out_dir/bats" "$out_dir/driver" >/dev/null
