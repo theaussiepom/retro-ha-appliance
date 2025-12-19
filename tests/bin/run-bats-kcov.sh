@@ -40,4 +40,4 @@ exec kcov \
   --include-path="$ROOT_DIR/scripts" \
   --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor" \
   "$out_dir" \
-  "$ROOT_DIR/tests/bin/run-bats.sh" "$@"
+  "$ROOT_DIR/tests/bin/run-bats-with-kcov-driver.sh" "$@"
