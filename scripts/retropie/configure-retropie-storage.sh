@@ -39,12 +39,7 @@ ensure_kv_line() {
   local tmp
   tmp="$(mktemp)"
   if grep -Eq "^${key}[[:space:]]*=" "$file"; then
-    awk -v k="$key" -v v="$value" '
-			BEGIN { replaced=0 }
-			$0 ~ "^" k "[[:space:]]*=" { print k " = \"" v "\""; replaced=1; next }
-			{ print }
-			END { if (replaced==0) print k " = \"" v "\"" }
-		' "$file" > "$tmp"
+    awk -v k="$key" -v v="$value" 'BEGIN{replaced=0} $0 ~ "^" k "[[:space:]]*=" {print k " = \"" v "\""; replaced=1; next} {print} END{if (replaced==0) print k " = \"" v "\""}' "$file" > "$tmp"
   else
     cat "$file" > "$tmp"
     echo "${key} = \"${value}\"" >> "$tmp"

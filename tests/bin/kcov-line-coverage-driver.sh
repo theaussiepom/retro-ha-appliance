@@ -369,6 +369,11 @@ run_cmd true >/dev/null
 retro_ha_realpath_m "/a/b/../c" >/dev/null
 retro_ha_realpath_m "a/./b" >/dev/null
 
+# Cover common.sh branch where empty root normalizes to '/'.
+export RETRO_HA_ROOT=""
+retro_ha_root >/dev/null
+unset RETRO_HA_ROOT
+
 export RETRO_HA_DRY_RUN=1
 svc_start foo.service >/dev/null
 svc_stop foo.service >/dev/null
@@ -448,6 +453,12 @@ rm -f "$leds_lib_link" 2>/dev/null || true
 export RETRO_HA_DRY_RUN=0
 mp_roms="$RETRO_HA_ROOT/mnt/retro-ha-roms"
 mkdir -p "$mp_roms"
+
+# Cover scripts/nfs/lib selection.
+nfs_lib_link="$ROOT_DIR/scripts/nfs/lib"
+if [[ ! -e "$nfs_lib_link" ]]; then
+  ln -s ../lib "$nfs_lib_link" 2>/dev/null || true
+fi
 run_allow_fail env NFS_SERVER= NFS_PATH= bash "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
 run_allow_fail env NFS_SERVER=server NFS_PATH=/export KCOV_MOUNTPOINTS_MOUNTED=":${mp_roms}:" bash "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
 run_allow_fail env NFS_SERVER=server NFS_PATH=/export RETRO_HA_NFS_MOUNT_POINT="$mp_roms" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 bash "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
@@ -461,6 +472,7 @@ run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVE
 run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" bash "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
 run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 bash "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
 run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=0 bash "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+rm -f "$nfs_lib_link" 2>/dev/null || true
 
 # save-backup.sh: disabled / retro active / not mounted / rsync missing / backup saves+states (delete on).
 run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=0 bash "$ROOT_DIR/scripts/nfs/save-backup.sh"
@@ -559,6 +571,19 @@ mv "$stub_bin/chromium-browser" "$stub_bin/chromium-browser.__kcov_hidden"
 run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION= bash "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
 mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser"
 
+# Reliably cover SCRIPT_DIR fallback (SCRIPT_DIR='.') and the chromium (not chromium-browser) branch.
+(
+  set +e
+  cd "$ROOT_DIR/scripts/mode" || exit 0
+  ln -s ../lib "lib" 2>/dev/null || true
+  chromium_only="$work_dir/bin-chromium-only"
+  mkdir -p "$chromium_only"
+  printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$chromium_only/chromium"
+  chmod +x "$chromium_only/chromium"
+  HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only:.:/usr/bin:/bin" ha-kiosk.sh >/dev/null 2>&1
+  rm -f "lib" >/dev/null 2>&1 || true
+) || true
+
 # retro-mode.sh: missing xinit / missing emulationstation / dry-run / non-dry-run.
 run_allow_fail env PATH="$stub_bin:/bin" bash "$ROOT_DIR/scripts/mode/retro-mode.sh"
 
@@ -600,6 +625,14 @@ printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$tmp_lib/ledctl.sh"
 chmod +x "$tmp_lib/ledctl.sh"
 run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR="$tmp_lib" bash "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
 run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= bash "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+
+# Cover scripts/mode/lib selection in enter-retro-mode.
+mode_lib_link="$ROOT_DIR/scripts/mode/lib"
+if [[ ! -e "$mode_lib_link" ]]; then
+  ln -s ../lib "$mode_lib_link" 2>/dev/null || true
+fi
+run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= bash "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+rm -f "$mode_lib_link" 2>/dev/null || true
 
 # Force fallback to installed default by making repo ledctl non-executable.
 chmod -x "$ROOT_DIR/scripts/leds/ledctl.sh" || true
@@ -685,6 +718,14 @@ KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_D
 
 # retropie/configure-retropie-storage.sh: require_root fail + getent missing + guardrails + retroarch missing/present + ensure_kv_line dry-run and non-dry-run.
 run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 RETRO_HA_DRY_RUN=1 bash "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+
+# Cover scripts/retropie/lib selection.
+retropie_lib_link="$ROOT_DIR/scripts/retropie/lib"
+if [[ ! -e "$retropie_lib_link" ]]; then
+  ln -s ../lib "$retropie_lib_link" 2>/dev/null || true
+fi
+KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 bash "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+rm -f "$retropie_lib_link" 2>/dev/null || true
 
 KCOV_GETENT_HOME="" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 bash "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
