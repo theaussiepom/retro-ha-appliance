@@ -23,4 +23,10 @@ teardown() {
 	assert_file_contains "$TEST_ROOT/calls.log" "lib/common.sh"
 	assert_file_contains "$TEST_ROOT/calls.log" "scripts/lib/logging.sh"
 	assert_file_contains "$TEST_ROOT/calls.log" "lib/logging.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "scripts/lib/path.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "lib/path.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "scripts/lib/x11.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "lib/x11.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "scripts/lib/backup.sh"
+	assert_file_contains "$TEST_ROOT/calls.log" "lib/backup.sh"
 }

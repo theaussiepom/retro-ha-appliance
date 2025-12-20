@@ -20,6 +20,7 @@ PATHS_LOG="${RETRO_HA_PATHS_FILE:-$ROOT_DIR/tests/.tmp/retro-ha-paths.log}"
 mkdir -p "$(dirname "$PATHS_LOG")"
 rm -f "$PATHS_LOG"
 export RETRO_HA_PATHS_FILE="$PATHS_LOG"
+export RETRO_HA_PATH_COVERAGE=1
 
 shopt -s nullglob
 
@@ -27,10 +28,38 @@ test_files=(
   "$ROOT_DIR/tests/integration"/*.bats
 )
 
-# Always run the suite-level path coverage check last.
-path_coverage_file="$ROOT_DIR/tests/unit/zz-path-coverage.bats"
-if [[ -f "$path_coverage_file" ]]; then
-  test_files+=("$path_coverage_file")
+explicit_selection=0
+
+# If the caller passed specific .bats files, run only those.
+# (Keep forwarding any non-file args like -t.)
+if [[ "$#" -gt 0 ]]; then
+  selected=()
+  passthrough=()
+  for arg in "$@"; do
+    if [[ "$arg" == *.bats ]]; then
+      selected+=("$arg")
+    else
+      passthrough+=("$arg")
+    fi
+  done
+
+  if [[ "${#selected[@]}" -gt 0 ]]; then
+    test_files=("${selected[@]}")
+    explicit_selection=1
+    set -- "${passthrough[@]}"
+  fi
+fi
+
+# Always run the suite-level path coverage check last (only for full-suite runs).
+path_coverage_file="$ROOT_DIR/tests/integration/zz-path-coverage.bats"
+if [[ "$explicit_selection" == "0" && -f "$path_coverage_file" ]]; then
+  filtered=()
+  for f in "${test_files[@]}"; do
+    if [[ "$f" != "$path_coverage_file" ]]; then
+      filtered+=("$f")
+    fi
+  done
+  test_files=("${filtered[@]}" "$path_coverage_file")
 fi
 
 shopt -u nullglob
