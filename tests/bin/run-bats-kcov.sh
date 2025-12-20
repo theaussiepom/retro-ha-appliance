@@ -28,7 +28,7 @@ bash_parser_flag=""
 parse_dirs_flag=""
 report_type_args=()
 verbosity_args=()
-kcov_arg_order="${KCOV_ARG_ORDER:-out_first}"
+kcov_arg_order="${KCOV_ARG_ORDER:-opts_first}"
 if grep -Fq -- '--bash-parser' <<<"$kcov_help"; then
   bash_parser_flag="--bash-parser"
 elif grep -Fq -- '--bash-parse' <<<"$kcov_help"; then
@@ -100,16 +100,9 @@ run_kcov() {
     printf '%s\n' "${built[@]}"
   }
 
-  # Primary cmd based on detected order; keep a fallback to handle distros where
-  # option parsing differs from what we expect.
+  # Use a single, explicit argument order. (No fallback/retry.)
   local -a kcov_cmd
   mapfile -t kcov_cmd < <(build_kcov_cmd "$kcov_arg_order")
-  local alt_order="opts_first"
-  if [[ "$kcov_arg_order" == "opts_first" ]]; then
-    alt_order="out_first"
-  fi
-  local -a kcov_cmd_alt
-  mapfile -t kcov_cmd_alt < <(build_kcov_cmd "$alt_order")
 
   echo "kcov step: $label" >&2
   echo "+ ${kcov_cmd[*]}" >&2
@@ -135,26 +128,6 @@ run_kcov() {
     return 0
   else
     rc=$?
-  fi
-
-  # If kcov failed quickly and didn't tell us why, try the alternate CLI order
-  # once. Only do this on nonzero exit.
-  local log_size=0
-  log_size="$(wc -c <"$log_file" 2>/dev/null || echo 0)"
-  if [[ "$rc" -ne 0 && "$log_size" -lt 200 ]]; then
-    local alt_log_file="$out_dir/${label}.alt.log"
-    echo "kcov produced little/no output; retrying with arg order: $alt_order" >&2
-    echo "+ ${kcov_cmd_alt[*]}" >&2
-    if run_one kcov_cmd_alt "$alt_log_file"; then
-      mv "$alt_log_file" "$log_file"
-      return 0
-    else
-      # IMPORTANT: capture the exit status here; do not use `$?` after `if`.
-      rc=$?
-    fi
-    if [[ -s "$alt_log_file" ]]; then
-      mv "$alt_log_file" "$log_file"
-    fi
   fi
 
   # In CI we run Bats once without kcov (for correctness) and a second time under
