@@ -34,9 +34,16 @@ if grep -Fq -- '--bash-parse-files-in-dirs' <<<"$kcov_help"; then
   parse_dirs_flag="--bash-parse-files-in-dirs=$ROOT_DIR/scripts"
 fi
 
-common_args=(
-  ${bash_parser_flag:++"$bash_parser_flag"}
-  ${parse_dirs_flag:++"$parse_dirs_flag"}
+echo "kcov version: $(kcov --version 2>/dev/null || echo unknown)" >&2
+
+common_args=()
+if [[ -n "$bash_parser_flag" ]]; then
+  common_args+=("$bash_parser_flag")
+fi
+if [[ -n "$parse_dirs_flag" ]]; then
+  common_args+=("$parse_dirs_flag")
+fi
+common_args+=(
   --include-path="$ROOT_DIR/scripts"
   --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor"
 )
