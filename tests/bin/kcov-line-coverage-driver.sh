@@ -634,8 +634,9 @@ mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser"
   printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$chromium_only/chromium"
   chmod +x "$chromium_only/chromium"
 
-  # Avoid picking up a system chromium-browser by not including /usr/bin in PATH.
-  HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only:$stub_bin" /usr/bin/bash ha-kiosk.sh >/dev/null 2>&1
+  # Use ./ha-kiosk.sh so SCRIPT_DIR resolves to '.' and exercises the fallback.
+  # Keep /usr/bin:/bin so the script can reach chromium selection.
+  HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only:$stub_bin:/usr/bin:/bin" /usr/bin/bash ./ha-kiosk.sh >/dev/null 2>&1
   rm -f "lib" >/dev/null 2>&1 || true
 ) || true
 
@@ -657,7 +658,7 @@ run_allow_fail env RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION=right bash "$ROOT
   set +e
   cd "$ROOT_DIR/scripts/mode" || exit 0
   ln -s ../lib "lib" 2>/dev/null || true
-  RETRO_HA_DRY_RUN=1 PATH="$stub_bin" /usr/bin/bash retro-mode.sh >/dev/null 2>&1
+  RETRO_HA_DRY_RUN=1 PATH="$stub_bin:/usr/bin:/bin" /usr/bin/bash ./retro-mode.sh >/dev/null 2>&1
   rm -f "lib" >/dev/null 2>&1 || true
 ) || true
 
@@ -962,6 +963,12 @@ rm -f "$RETRO_HA_INSTALLED_MARKER"
 (
   KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
     RETRO_HA_INSTALL_RETROPIE=1 \
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+)
+
+# Non-dry-run marker write (covers the date > "$MARKER_FILE" line).
+(
+  RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
     PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
 )
 
