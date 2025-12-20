@@ -1,0 +1,27 @@
+[Unit]
+Description=RetroPie mode
+After=network-online.target
+Conflicts=ha-kiosk.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/retro-ha/config.env
+User=retropi
+Group=retropi
+
+# Create a logind session so rootless Xorg can acquire the seat.
+PAMName=login
+StandardInput=tty
+TTYPath=/dev/tty8
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+
+ExecStart=/usr/local/lib/retro-ha/retro-mode.sh
+# When RetroPie exits, return to HA by default.
+ExecStopPost=/bin/systemctl start ha-kiosk.service
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

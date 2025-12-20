@@ -1,0 +1,7 @@
+[Unit]
+Description=Fail over to RetroPie mode
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/retro-ha/config.env
+ExecStart=/usr/local/lib/retro-ha/enter-retro-mode.sh

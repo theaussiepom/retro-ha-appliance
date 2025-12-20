@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+calls_file="${RETRO_HA_CALLS_FILE:-/dev/null}"
+printf 'systemctl %q\n' "$*" >>"$calls_file" || true
+
+# Minimal behavior for unit tests.
+if [[ "$1" == "is-active" && "$2" == "--quiet" ]]; then
+	unit="$3"
+	case "$unit" in
+		retro-mode.service) exit "${SYSTEMCTL_ACTIVE_RETRO:-1}" ;;
+		ha-kiosk.service) exit "${SYSTEMCTL_ACTIVE_HA:-1}" ;;
+		*) exit 1 ;;
+	esac
+fi
+
+exit 0

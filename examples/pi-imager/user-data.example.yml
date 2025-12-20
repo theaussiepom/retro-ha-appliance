@@ -1,0 +1,97 @@
+#cloud-config
+---
+# Example Pi Imager user-data.
+# Copy/adjust for your environment.
+
+write_files:
+  - path: /etc/retro-ha/config.env
+    permissions: '0644'
+    content: |
+      # Core config (required)
+      RETRO_HA_REPO_URL=https://github.com/theaussiepom/retro-ha-appliance.git
+      RETRO_HA_REPO_REF=main
+
+      # App config (examples)
+      HA_URL=
+      NFS_SERVER=
+      NFS_PATH=
+
+      # MQTT LED control (optional)
+      RETRO_HA_LED_MQTT_ENABLED=0
+      MQTT_HOST=
+      # MQTT_USERNAME=
+      # MQTT_PASSWORD=
+
+  - path: /usr/local/lib/retro-ha/bootstrap.sh
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      log() { echo "retro-ha bootstrap: $*" >&2; }
+      die() { log "$*"; exit 1; }
+      require_cmd() { command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"; }
+      network_ok() { getent hosts github.com >/dev/null 2>&1 && curl -fsS https://github.com >/dev/null 2>&1; }
+
+      main() {
+        if [[ -f /var/lib/retro-ha/installed ]]; then
+          log "Marker present; nothing to do."
+          exit 0
+        fi
+
+        require_cmd curl
+        require_cmd git
+
+        if ! network_ok; then
+          die "Network not ready yet"
+        fi
+
+        local repo_url="${RETRO_HA_REPO_URL:-}"
+        local repo_ref="${RETRO_HA_REPO_REF:-}"
+        [[ -n "$repo_url" ]] || die "RETRO_HA_REPO_URL is required"
+        [[ -n "$repo_ref" ]] || die "RETRO_HA_REPO_REF is required"
+
+        local checkout_dir="${RETRO_HA_CHECKOUT_DIR:-/opt/retro-ha-appliance}"
+        if [[ ! -d "$checkout_dir/.git" ]]; then
+          log "Cloning $repo_url -> $checkout_dir"
+          rm -rf "$checkout_dir"
+          git clone --no-checkout "$repo_url" "$checkout_dir"
+        fi
+
+        log "Fetching ref $repo_ref"
+        git -C "$checkout_dir" fetch --depth 1 origin "$repo_ref"
+        git -C "$checkout_dir" checkout -f FETCH_HEAD
+
+        if [[ ! -x "$checkout_dir/scripts/install.sh" ]]; then
+          die "Installer not found or not executable: $checkout_dir/scripts/install.sh"
+        fi
+
+        exec "$checkout_dir/scripts/install.sh"
+      }
+
+      main "$@"
+
+  - path: /etc/systemd/system/retro-ha-install.service
+    permissions: '0644'
+    content: |
+      [Unit]
+      Description=retro-ha one-time installer
+      Wants=network-online.target
+      After=network-online.target
+      ConditionPathExists=!/var/lib/retro-ha/installed
+
+      [Service]
+      Type=oneshot
+      EnvironmentFile=-/etc/retro-ha/config.env
+      ExecStart=/usr/local/lib/retro-ha/bootstrap.sh
+      Restart=on-failure
+      RestartSec=30
+      StartLimitIntervalSec=0
+
+      [Install]
+      WantedBy=multi-user.target
+
+runcmd:
+  - [bash, -lc, 'apt-get update && apt-get install -y --no-install-recommends ca-certificates curl git']
+  - [bash, -lc, 'systemctl daemon-reload']
+  - [bash, -lc, 'systemctl enable --now retro-ha-install.service']
