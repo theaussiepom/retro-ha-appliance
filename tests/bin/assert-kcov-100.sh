@@ -9,6 +9,7 @@ python3 - <<'PY' "$out_dir"
 import glob
 import json
 import os
+import re
 import sys
 
 out_dir = sys.argv[1]
@@ -101,6 +102,110 @@ if rows:
             print(f"  - {path}: {p_f:.2f}% ({c_i}/{t_i})")
         else:
             print(f"  - {path}: {p_f:.2f}%")
+
+
+def _collect_report_js_files(report_root: str) -> list[str]:
+    # kcov report output typically contains many *.js files (including per-source data).
+    # We'll scan under the directory that contains coverage.json.
+    return glob.glob(os.path.join(report_root, "**", "*.js"), recursive=True)
+
+
+def _pick_js_for_source(js_files: list[str], source_path: str) -> str | None:
+    base = os.path.basename(source_path)
+    base_l = base.lower()
+    # Prefer a js file that includes the basename; tie-breaker: shortest path.
+    candidates = [p for p in js_files if base_l in os.path.basename(p).lower()]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda p: (len(p), p))
+    return candidates[0]
+
+
+_LINE_OBJ_RE = re.compile(
+    r'\{"lineNum":"(?P<num>\s*\d+)"\s*,\s*"line":"(?P<line>(?:\\.|[^"\\])*)"(?P<rest>[^}]*)\}',
+    re.MULTILINE,
+)
+
+
+def _uncovered_lines_from_js(js_text: str) -> list[tuple[int, str]]:
+    uncovered: list[tuple[int, str]] = []
+    for m in _LINE_OBJ_RE.finditer(js_text):
+        rest = m.group("rest")
+        if '"class":"lineNoCov"' not in rest and '"class":"lineNoCovHov"' not in rest:
+            continue
+        num_s = m.group("num").strip()
+        try:
+            num = int(num_s)
+        except ValueError:
+            continue
+        line = m.group("line")
+        # Best-effort unescape of common sequences.
+        line = line.replace('\\\\', '\\')
+        line = line.replace('\\"', '"')
+        line = line.replace('\\t', '\t')
+        line = line.replace('\\n', '\\n')
+        uncovered.append((num, line))
+    return uncovered
+
+
+def _print_uncovered_details(data: dict, coverage_path: str) -> None:
+    files = data.get("files")
+    if not isinstance(files, list):
+        return
+
+    report_root = os.path.dirname(coverage_path)
+    js_files = _collect_report_js_files(report_root)
+    if not js_files:
+        return
+
+    # Focus on the worst few files to keep logs readable.
+    with_pct = []
+    for entry in files:
+        if not isinstance(entry, dict):
+            continue
+        path = entry.get("file")
+        if not path:
+            continue
+        try:
+            p = float(entry.get("percent_covered"))
+        except (TypeError, ValueError):
+            continue
+        with_pct.append((p, path))
+
+    if not with_pct:
+        return
+    with_pct.sort(key=lambda t: (t[0], t[1]))
+    worst = with_pct[:5]
+
+    print("kcov uncovered lines (best-effort from report JS):")
+    for p, path in worst:
+        js_path = _pick_js_for_source(js_files, path)
+        if not js_path:
+            print(f"  - {path}: (no matching report JS found)")
+            continue
+        try:
+            with open(js_path, "r", encoding="utf-8", errors="replace") as f:
+                js_text = f.read()
+        except OSError:
+            print(f"  - {path}: (failed to read {js_path})")
+            continue
+        uncovered = _uncovered_lines_from_js(js_text)
+        if not uncovered:
+            print(f"  - {path}: (no uncovered lines found in {os.path.basename(js_path)})")
+            continue
+        uncovered.sort(key=lambda t: t[0])
+        # Print up to 12 uncovered lines per file.
+        print(f"  - {path}:")
+        for num, line in uncovered[:12]:
+            print(f"      L{num}: {line}")
+
+
+if pct < 99.9999 and isinstance(data, dict):
+    # Only dump detailed uncovered lines when failing the gate.
+    try:
+        _print_uncovered_details(data, coverage_path)
+    except Exception as e:
+        print(f"kcov: failed to extract uncovered line details: {e}", file=sys.stderr)
 
 # Allow tiny float noise.
 if pct < 99.9999:
