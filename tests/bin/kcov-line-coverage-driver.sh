@@ -742,6 +742,9 @@ fi
 run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 RETRO_HA_DRY_RUN=1 bash "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 KCOV_RETROPI_EXISTS=0 RETRO_HA_DRY_RUN=1 bash "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
+home="$work_dir/home/retropi"
+mkdir -p "$home"
+
 # Cover scripts/retropie/lib selection in install-retropie.
 retropie_lib_link="$ROOT_DIR/scripts/retropie/lib"
 if [[ ! -e "$retropie_lib_link" ]]; then
@@ -749,9 +752,6 @@ if [[ ! -e "$retropie_lib_link" ]]; then
 fi
 KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 bash "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 rm -f "$retropie_lib_link" 2>/dev/null || true
-
-home="$work_dir/home/retropi"
-mkdir -p "$home"
 
 nogit="$work_dir/bin-nogit"
 mkdir -p "$nogit"
