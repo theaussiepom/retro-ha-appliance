@@ -25,9 +25,27 @@ test_teardown() {
 
 @test "install branch coverage: root ok" {
   export RETRO_HA_ALLOW_NON_ROOT=0
+  export RETRO_HA_EUID_OVERRIDE=0
   export RETRO_HA_DRY_RUN=1
   export RETRO_HA_INSTALLED_MARKER="$TEST_ROOT/var/lib/retro-ha/installed"
   : >"$RETRO_HA_INSTALLED_MARKER"
+
+  run bash "$RETRO_HA_REPO_ROOT/scripts/install.sh"
+  assert_success
+}
+
+@test "install branch coverage: chromium none" {
+  # Exercise the install_packages chromium fallback branch.
+  export RETRO_HA_ALLOW_NON_ROOT=1
+  export RETRO_HA_DRY_RUN=1
+  export ID_RETROPI_EXISTS=1
+  export APT_CACHE_HAS_CHROMIUM_BROWSER=0
+  export APT_CACHE_HAS_CHROMIUM=0
+  export RETRO_HA_INSTALL_RETROPIE=0
+
+  rm -f "$TEST_ROOT/var/lib/retro-ha/installed"
+  unset RETRO_HA_STUB_FLOCK_TOUCH_MARKER || true
+  unset RETRO_HA_STUB_FLOCK_EXIT_CODE || true
 
   run bash "$RETRO_HA_REPO_ROOT/scripts/install.sh"
   assert_success
