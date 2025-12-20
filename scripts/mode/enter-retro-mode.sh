@@ -68,7 +68,7 @@ main() {
 
   # RetroPie mode should force LEDs on.
   local ledctl
-  ledctl="$(retro_ha_ledctl_path)"
+  ledctl="$(retro_ha_ledctl_path "$SCRIPT_DIR")"
   if [[ -x "$ledctl" ]]; then
     run_cmd "$ledctl" all on || true
   fi

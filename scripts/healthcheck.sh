@@ -61,7 +61,7 @@ main() {
 
   log "No active mode detected; failing over to Retro mode"
   local enter
-  enter="$(healthcheck_enter_retro_path)"
+  enter="$(healthcheck_enter_retro_path "$SCRIPT_DIR")"
 
   run_cmd "$enter" || true
 }

@@ -44,7 +44,7 @@ main() {
   log "Starting RetroPie (EmulationStation) on vt${vt}, display ${x_display}"
 
   local runtime_dir
-  runtime_dir="$(retro_ha_runtime_dir)"
+  runtime_dir="$(retro_ha_runtime_dir "$(id -u)")"
   local state_dir
   state_dir="$(retro_ha_state_dir "$runtime_dir")"
   run_cmd mkdir -p "$state_dir"

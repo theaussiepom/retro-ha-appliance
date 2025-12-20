@@ -49,7 +49,7 @@ main() {
   local vt="${RETRO_HA_X_VT:-7}"
 
   local runtime_dir
-  runtime_dir="$(retro_ha_runtime_dir)"
+  runtime_dir="$(retro_ha_runtime_dir "$(id -u)")"
   local state_dir
   state_dir="$(retro_ha_state_dir "$runtime_dir")"
   run_cmd mkdir -p "$state_dir"
