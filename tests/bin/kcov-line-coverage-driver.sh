@@ -622,22 +622,24 @@ mv "$stub_bin/chromium-browser" "$stub_bin/chromium-browser.__kcov_hidden"
 run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION= bash "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
 mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser"
 
-# Reliably cover SCRIPT_DIR fallback (SCRIPT_DIR='.') and the chromium (not chromium-browser) branch.
-# Important: run as `bash ha-kiosk.sh` (no slash) so BASH_SOURCE[0] has no '/'.
+# Reliably cover the chromium (not chromium-browser) branch.
+# Use a minimal PATH that contains `chromium` but not `chromium-browser`.
 (
   set +e
-  cd "$ROOT_DIR/scripts/mode" || exit 0
-  ln -s ../lib "lib" 2>/dev/null || true
-
   chromium_only="$work_dir/bin-chromium-only"
   mkdir -p "$chromium_only"
+
+  # Required helpers for the script prelude.
+  ln -sf /usr/bin/bash "$chromium_only/bash"
+  ln -sf /usr/bin/dirname "$chromium_only/dirname"
+  ln -sf /usr/bin/id "$chromium_only/id"
+
+  # Chromium stub.
   printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$chromium_only/chromium"
   chmod +x "$chromium_only/chromium"
 
-  # Force chromium selection: provide chromium in PATH, and *do not* include /usr/bin
-  # (so we don't accidentally find a system chromium-browser first).
-  HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only:$stub_bin:/bin" /usr/bin/bash ./ha-kiosk.sh >/dev/null 2>&1
-  rm -f "lib" >/dev/null 2>&1 || true
+  HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only" \
+    bash "$ROOT_DIR/scripts/mode/ha-kiosk.sh" >/dev/null 2>&1
 ) || true
 
 # retro-mode.sh: missing xinit / missing emulationstation / dry-run / non-dry-run.
