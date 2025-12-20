@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure a sane PATH even if the calling shell mutated it.
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 "$ROOT_DIR/tests/bin/fetch-bats.sh" >/dev/null
