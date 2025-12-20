@@ -99,11 +99,13 @@ main() {
   local -a allowlist=()
   local -a excludelist=()
   while IFS= read -r item; do
+    [[ -n "$item" ]] || continue
     allowlist+=("$item")
-  done < <(split_list "$systems_allow")
+  done <<< "$(split_list "$systems_allow")"
   while IFS= read -r item; do
+    [[ -n "$item" ]] || continue
     excludelist+=("$item")
-  done < <(split_list "$systems_exclude")
+  done <<< "$(split_list "$systems_exclude")"
 
   local -a systems=()
   if [[ ${#allowlist[@]} -gt 0 ]]; then
@@ -118,7 +120,7 @@ main() {
       entry="${entry##*/}"
       [[ -d "$src/$entry" ]] || continue
       systems+=("$entry")
-    done < <(find "$src" -mindepth 1 -maxdepth 1 -type d -print 2> /dev/null | sort)
+    done <<< "$(find "$src" -mindepth 1 -maxdepth 1 -type d -print 2> /dev/null | sort)"
   fi
 
   local system

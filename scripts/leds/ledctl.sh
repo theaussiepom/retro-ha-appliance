@@ -112,7 +112,7 @@ main() {
   local pwr_on_trigger="${RETRO_HA_PWR_LED_TRIGGER_ON:-default-on}"
 
   case "$which" in
-    act | pwr | all) ;;
+    act | pwr | all) : ;;
     *)
       cover_path "ledctl:invalid-target"
       echo "Invalid target: $which" >&2
@@ -122,7 +122,7 @@ main() {
   esac
 
   case "$state" in
-    on | off) ;;
+    on | off) : ;;
     *)
       cover_path "ledctl:invalid-state"
       echo "Invalid state: $state" >&2

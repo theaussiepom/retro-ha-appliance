@@ -69,8 +69,9 @@ publish_state() {
   local args=()
   local line
   while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
     args+=("$line")
-  done < <(mosq_args)
+  done <<< "$(mosq_args)"
   run_cmd mosquitto_pub "${args[@]}" -t "$state_topic" -m "$payload" -r
 }
 
@@ -130,8 +131,9 @@ main() {
   local args=()
   local line
   while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
     args+=("$line")
-  done < <(mosq_args)
+  done <<< "$(mosq_args)"
 
   log "Subscribing to ${topic_filter}"
 
