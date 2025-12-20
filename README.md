@@ -556,7 +556,9 @@ command -v mosquitto_pub || true
 Recommended targets:
 
 - `make lint` (shell, yaml, systemd, markdown)
-- `./tests/bin/run-bats.sh`
+- `make test-unit` (fast; runs on every commit)
+- `make test-integration` (slower; run after unit passes)
+- `./tests/bin/run-bats.sh` (everything)
 - `make coverage` (Linux/devcontainer recommended)
 
 Devcontainer:

@@ -1,12 +1,14 @@
 SHELL := /usr/bin/env bash
 
-.PHONY: help tools lint lint-shell lint-yaml lint-systemd lint-markdown format format-shell test coverage
+.PHONY: help tools lint lint-shell lint-yaml lint-systemd lint-markdown format format-shell test test-unit test-integration coverage
 
 help:
 	@echo "Targets:"
 	@echo "  tools         Install local lint tools (Linux/macOS with brew/apt) - optional"
 	@echo "  lint          Run all linters (matches CI)"
-	@echo "  test          Run bats tests (fetches bats into tests/vendor)"
+	@echo "  test          Run all bats tests (fetches bats into tests/vendor)"
+	@echo "  test-unit     Run unit bats tests only"
+	@echo "  test-integration Run integration bats tests only (includes path coverage check)"
 	@echo "  format        Auto-format where safe (shell scripts)"
 	@echo "  lint-shell    bash -n + shellcheck + shfmt -d"
 	@echo "  lint-yaml     yamllint"
@@ -15,6 +17,12 @@ help:
 
 test:
 	@./tests/bin/run-bats.sh
+
+test-unit:
+	@./tests/bin/run-bats-unit.sh
+
+test-integration:
+	@./tests/bin/run-bats-integration.sh
 
 coverage:
 	@./tests/bin/run-bats-kcov.sh

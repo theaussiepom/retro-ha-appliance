@@ -243,7 +243,7 @@ run_kcov_merge() {
 # kcov bash coverage can behave differently depending on whether the traced
 # process exec()s into bats. To keep the original behavior (which already
 # captured coverage from the Bats suite), run Bats under kcov as its own run.
-run_kcov "bats" "$out_dir/bats" "$ROOT_DIR/tests/bin/run-bats.sh" "$@"
+run_kcov "bats" "$out_dir/bats" "$ROOT_DIR/tests/bin/run-bats-integration.sh" "$@"
 
 # Run additional “line coverage” driver paths under kcov.
 run_kcov "driver" "$out_dir/driver" "$ROOT_DIR/tests/bin/kcov-line-coverage-driver.sh"
