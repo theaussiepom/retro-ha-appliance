@@ -28,7 +28,7 @@ bash_parser_flag=""
 parse_dirs_flag=""
 report_type_args=()
 verbosity_args=()
-kcov_arg_order="opts_first"
+kcov_arg_order="${KCOV_ARG_ORDER:-out_first}"
 if grep -Fq -- '--bash-parser' <<<"$kcov_help"; then
   bash_parser_flag="--bash-parser"
 elif grep -Fq -- '--bash-parse' <<<"$kcov_help"; then
@@ -60,15 +60,6 @@ grep -E '(^|\s)--(bash|report-type|verbose|debug|merge)' <<<"$kcov_help" >&2 || 
 usage_line="$(grep -E '^Usage:' <<<"$kcov_help" | head -n 1 || true)"
 if [[ -n "$usage_line" ]]; then
   echo "$usage_line" >&2
-fi
-
-# kcov CLI argument order varies across versions/packages.
-# Some expect: kcov [options] outdir command...
-# Others expect: kcov outdir [options] command...
-if grep -Eq '^Usage:.*kcov[[:space:]]+\[options\][[:space:]]+[^ ]*out' <<<"$usage_line"; then
-  kcov_arg_order="opts_first"
-elif grep -Eq '^Usage:.*kcov[[:space:]]+[^ ]*out[^ ]*[[:space:]]+\[options\]' <<<"$usage_line"; then
-  kcov_arg_order="out_first"
 fi
 echo "kcov arg order: $kcov_arg_order" >&2
 
@@ -110,7 +101,7 @@ run_kcov() {
   }
 
   # Primary cmd based on detected order; keep a fallback to handle distros where
-  # help/usage formatting differs from what we expect.
+  # option parsing differs from what we expect.
   local -a kcov_cmd
   mapfile -t kcov_cmd < <(build_kcov_cmd "$kcov_arg_order")
   local alt_order="opts_first"
