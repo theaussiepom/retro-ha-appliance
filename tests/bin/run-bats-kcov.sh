@@ -15,7 +15,6 @@ fi
 out_dir="${KCOV_OUT_DIR:-$ROOT_DIR/coverage}"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
-mkdir -p "$out_dir/bats" "$out_dir/driver" "$out_dir/kcov-merged"
 
 # Run the Bats suite under kcov to gather coverage for scripts/**.
 # Prefer the explicit bash parser flag; older kcov versions use different names.
@@ -25,6 +24,7 @@ kcov_help="$(kcov --help 2>&1 || true)"
 bash_parser_flag=""
 parse_dirs_flag=""
 report_type_args=()
+verbosity_args=()
 if grep -Fq -- '--bash-parser' <<<"$kcov_help"; then
   bash_parser_flag="--bash-parser"
 elif grep -Fq -- '--bash-parse' <<<"$kcov_help"; then
@@ -41,7 +41,17 @@ if grep -Fq -- '--report-type' <<<"$kcov_help"; then
   report_type_args+=(--report-type=html --report-type=json)
 fi
 
+if grep -Fq -- '--verbose' <<<"$kcov_help"; then
+  verbosity_args+=(--verbose)
+fi
+if grep -Fq -- '--debug' <<<"$kcov_help"; then
+  verbosity_args+=(--debug)
+fi
+
 echo "kcov version: $(kcov --version 2>/dev/null || echo unknown)" >&2
+echo "kcov path: $(command -v kcov)" >&2
+echo "kcov capabilities (grep):" >&2
+grep -E '(^|\s)--(bash|report-type|verbose|debug|merge)' <<<"$kcov_help" >&2 || true
 
 common_args=()
 if [[ -n "$bash_parser_flag" ]]; then
@@ -51,6 +61,7 @@ if [[ -n "$parse_dirs_flag" ]]; then
   common_args+=("$parse_dirs_flag")
 fi
 common_args+=(
+  "${verbosity_args[@]}"
   "${report_type_args[@]}"
   --include-path="$ROOT_DIR/scripts"
   --exclude-pattern="$ROOT_DIR/tests,$ROOT_DIR/tests/vendor"
