@@ -856,7 +856,7 @@ rm -rf "$checkout_dir/.git"
   RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
     RETRO_HA_REPO_URL=https://example.invalid/repo.git \
     RETRO_HA_REPO_REF=main \
-    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null 2>&1
 ) || true
 
 # Already cloned path
@@ -866,7 +866,7 @@ mkdir -p "$checkout_dir/.git"
   RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
     RETRO_HA_REPO_URL=https://example.invalid/repo.git \
     RETRO_HA_REPO_REF=main \
-    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null 2>&1
 ) || true
 
 # Missing installer branch
@@ -875,7 +875,7 @@ mkdir -p "$checkout_dir/.git"
   RETRO_HA_CHECKOUT_DIR="$RETRO_HA_ROOT/opt/missing-installer" \
     RETRO_HA_REPO_URL=https://example.invalid/repo.git \
     RETRO_HA_REPO_REF=main \
-    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 bash "$ROOT_DIR/scripts/bootstrap.sh" >/dev/null 2>&1
 ) || true
 
 # Cover bootstrap's "$SCRIPT_DIR/../lib" selection by temporarily providing a repo-root lib/.
@@ -932,7 +932,7 @@ export RETRO_HA_INSTALLED_MARKER="$RETRO_HA_ROOT/var/lib/retro-ha/installed"
 (
   set +e
   KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
-    "$ROOT_DIR/scripts/install.sh" >/dev/null
+    "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 ) || true
 rm -f "$RETRO_HA_INSTALLED_MARKER"
 
@@ -940,41 +940,41 @@ rm -f "$RETRO_HA_INSTALLED_MARKER"
 (
   set +e
   KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=fail \
-    "$ROOT_DIR/scripts/install.sh" >/dev/null
+    "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 ) || true
 
 # Marker appears while waiting for lock.
 (
   set +e
   KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=create_marker \
-    "$ROOT_DIR/scripts/install.sh" >/dev/null
+    "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 ) || true
 rm -f "$RETRO_HA_INSTALLED_MARKER"
 
 # Full-ish dry-run with different apt-cache outcomes and user present/missing.
 (
   KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=browser KCOV_FLOCK_MODE=ok \
-    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 )
 (
   KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=chromium KCOV_FLOCK_MODE=ok \
-    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 )
 (
   KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
     RETRO_HA_INSTALL_RETROPIE=1 \
-    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 )
 
 # Non-dry-run marker write (covers the date > "$MARKER_FILE" line).
 (
   RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
-    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 )
 
 # Require-root failure branch.
 (
   set +e
   RETRO_HA_ALLOW_NON_ROOT=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
-    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null
+    PATH="$stub_bin:/usr/bin:/bin" bash "$ROOT_DIR/scripts/install.sh" >/dev/null 2>&1
 ) || true
