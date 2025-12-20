@@ -96,6 +96,7 @@ run_kcov() {
 
   build_kcov_cmd() {
     local order="$1"
+    shift
     local -a built=(kcov)
     if [[ "$order" == "out_first" ]]; then
       built+=("$out" "${common_args[@]}" "$cmd" "$@")
