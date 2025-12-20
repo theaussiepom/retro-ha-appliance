@@ -15,9 +15,9 @@ retro_ha__cover_path_raw() {
   local dir
   dir="${path_file%/*}"
   if [[ -n "$dir" && "$dir" != "$path_file" ]]; then
-    mkdir -p "$dir" 2>/dev/null || true
+    mkdir -p "$dir" 2> /dev/null || true
   fi
-  printf 'PATH %s\n' "$path_id" >>"$path_file" 2>/dev/null || true
+  printf 'PATH %s\n' "$path_id" >> "$path_file" 2> /dev/null || true
 }
 
 retro_ha_log_prefix() {

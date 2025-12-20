@@ -61,7 +61,7 @@ retro_ha_xinitrc_prelude() {
   if declare -F cover_path > /dev/null 2>&1; then
     cover_path "lib-x11:xinitrc-prelude"
   fi
-  cat <<'EOF'
+  cat << 'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 

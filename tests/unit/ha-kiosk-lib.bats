@@ -38,7 +38,8 @@ test_teardown() {
   ln -s "${RETRO_HA_REPO_ROOT}/tests/stubs/chromium" "$bindir/chromium"
 
   local old_path="$PATH"
-  PATH="$bindir:$old_path"
+  # Ensure host-installed chromium-browser can't win resolution.
+  PATH="$bindir"
 
   run chromium_bin
   PATH="$old_path"

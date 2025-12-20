@@ -57,7 +57,7 @@ main() {
   else
     {
       retro_ha_xinitrc_prelude
-      cat <<'EOF'
+      cat << 'EOF'
 
 exec /usr/bin/emulationstation
 EOF
