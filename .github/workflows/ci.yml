@@ -70,35 +70,22 @@ jobs:
 
           shfmt -d -i 2 -ci -sr "${files[@]}"
 
-  unit-tests:
-    name: unit tests
+  tests:
+    name: tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run unit tests (show Bats output)
+      - name: Run all tests (show Bats output)
         shell: bash
         run: |
           set -euo pipefail
-          "$GITHUB_WORKSPACE/tests/bin/run-bats-unit.sh"
-
-  integration-tests:
-    name: integration tests
-    runs-on: ubuntu-latest
-    needs: [unit-tests]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run integration tests (show Bats output)
-        shell: bash
-        run: |
-          set -euo pipefail
-          "$GITHUB_WORKSPACE/tests/bin/run-bats-integration.sh"
+          make test
 
   coverage:
     name: coverage (kcov)
     runs-on: ubuntu-22.04
-    needs: [integration-tests]
+    needs: [tests]
     steps:
       - uses: actions/checkout@v4
 
