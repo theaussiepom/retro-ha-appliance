@@ -91,6 +91,7 @@ jobs:
           "$GITHUB_WORKSPACE/tests/bin/run-bats.sh"
 
       - name: Run tests under kcov
+        timeout-minutes: 15
         shell: bash
         run: |
           set -euo pipefail

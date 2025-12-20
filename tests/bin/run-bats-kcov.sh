@@ -73,17 +73,34 @@ run_kcov() {
 
   local log_file="$out_dir/${label}.log"
   local strace_file="$out_dir/${label}.strace"
+  local timeout_bin=""
+  local timeout_seconds="${KCOV_TIMEOUT_SECONDS:-600}"
 
   echo "kcov step: $label" >&2
   echo "+ kcov $*" >&2
 
+  if command -v timeout >/dev/null 2>&1; then
+    timeout_bin="timeout"
+  fi
+
   # Capture stdout+stderr to a log file so we can print it on failure.
-  if kcov "$@" >"$log_file" 2>&1; then
+  if [[ -n "$timeout_bin" ]]; then
+    if "$timeout_bin" --foreground -k 10s "${timeout_seconds}s" kcov "$@" >"$log_file" 2>&1; then
+      return 0
+    else
+      # IMPORTANT: capture the kcov/timeout exit status here.
+      local rc=$?
+    fi
+  elif kcov "$@" >"$log_file" 2>&1; then
     return 0
   else
     # IMPORTANT: capture the kcov exit status here. The exit status of an `if`
     # compound command without an else branch can be 0, which would mask failure.
     local rc=$?
+  fi
+
+  if [[ "$rc" -eq 124 ]]; then
+    echo "kcov step timed out after ${timeout_seconds}s: $label" >&2
   fi
 
   # If kcov failed but produced no output, capture a small strace to help debug
@@ -92,7 +109,11 @@ run_kcov() {
     if command -v strace >/dev/null 2>&1; then
       echo "kcov produced little/no output; capturing strace to $strace_file" >&2
       # Trace process/exec/file opens only; enough to spot missing binaries, perms, etc.
-      strace -f -qq -o "$strace_file" -e trace=process,execve,file kcov "$@" >/dev/null 2>&1 || true
+      if [[ -n "$timeout_bin" ]]; then
+        "$timeout_bin" --foreground -k 5s 60s strace -f -qq -o "$strace_file" -e trace=process,execve,file kcov "$@" >/dev/null 2>&1 || true
+      else
+        strace -f -qq -o "$strace_file" -e trace=process,execve,file kcov "$@" >/dev/null 2>&1 || true
+      fi
     fi
   fi
 
