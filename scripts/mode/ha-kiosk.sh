@@ -20,15 +20,19 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 chromium_bin() {
-  if command -v chromium-browser > /dev/null 2>&1; then
-    echo chromium-browser
-    return 0
+  local candidate=""
+  local c
+  for c in chromium-browser chromium; do
+    if command -v "$c" > /dev/null 2>&1; then
+      candidate="$c"
+      break
+    fi
+  done
+  if [[ -z "$candidate" ]]; then
+    return 1
   fi
-  if command -v chromium > /dev/null 2>&1; then
-    echo chromium
-    return 0
-  fi
-  return 1
+  printf '%s\n' "$candidate"
+  return 0
 }
 
 main() {
