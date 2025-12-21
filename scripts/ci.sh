@@ -5,7 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 require_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
+  if ! command -v "$1" > /dev/null 2>&1; then
     echo "Missing required command: $1" >&2
     return 1
   fi
@@ -69,18 +69,18 @@ echo "== systemd: systemd-analyze verify =="
 require_cmd systemd-analyze
 # systemd-analyze verify checks that ExecStart binaries exist.
 # Mirror CI by creating minimal executable stubs for referenced /usr/local paths.
-if command -v sudo >/dev/null 2>&1; then
+if command -v sudo > /dev/null 2>&1; then
   execs=()
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     execs+=("${line#*=}")
-  done < <(grep -hoE '^(ExecStart|ExecStartPre)=[^ ]+' systemd/**/*.service 2>/dev/null | sort -u || true)
+  done < <(grep -hoE '^(ExecStart|ExecStartPre)=[^ ]+' systemd/**/*.service 2> /dev/null | sort -u || true)
 
   for exe in "${execs[@]}"; do
     case "$exe" in
       /usr/local/*)
         sudo mkdir -p "$(dirname "$exe")"
-        printf '%s\n' '#!/usr/bin/env bash' 'exit 0' | sudo tee "$exe" >/dev/null
+        printf '%s\n' '#!/usr/bin/env bash' 'exit 0' | sudo tee "$exe" > /dev/null
         sudo chmod +x "$exe"
         ;;
     esac

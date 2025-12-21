@@ -14,6 +14,24 @@ teardown() {
 	teardown_test_root
 }
 
+write_mosquitto_sub_stub() {
+	local line="${1:-}"
+
+	cat >"$TEST_ROOT/bin/mosquitto_sub" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "mosquitto_sub \$*" >>"\${RETRO_HA_CALLS_FILE:-/dev/null}" || true
+
+if [[ -n "${line}" ]]; then
+	echo "${line}"
+fi
+
+exit 0
+EOF
+	chmod +x "$TEST_ROOT/bin/mosquitto_sub"
+}
+
 make_fake_backlight() {
 	local name="$1"
 	local max="$2"
@@ -89,6 +107,105 @@ EOF
 	assert_file_contains "$TEST_ROOT/calls.log" "retro-ha/screen/brightness/state"
 	assert_file_contains "$TEST_ROOT/calls.log" "-m 50"
 	assert_file_contains "$TEST_ROOT/calls.log" "-r"
+}
+
+@test "screen-brightness-mqtt prefers <script_dir>/lib when present" {
+	# Cover the LIB_DIR="$SCRIPT_DIR/lib" branch under kcov by creating a
+	# temporary lib/ symlink next to the script.
+	local lib_link="$RETRO_HA_REPO_ROOT/scripts/screen/lib"
+	rm -f "$lib_link"
+	ln -s ../lib "$lib_link"
+
+	export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=0
+	run bash "$RETRO_HA_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+	rm -f "$lib_link"
+	assert_success
+}
+
+@test "screen-brightness-mqtt fails fast when scripts/lib cannot be located" {
+	run bash -c '
+		set -euo pipefail
+		repo="$1"
+		backup="$2"
+
+		rm -f "$repo/scripts/screen/lib" || true
+		mv "$repo/scripts/lib" "$backup"
+		trap "mv \"$backup\" \"$repo/scripts/lib\" 2>/dev/null || true" EXIT
+
+		export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=0
+		bash "$repo/scripts/screen/screen-brightness-mqtt.sh"
+	' bash "$RETRO_HA_REPO_ROOT" "$TEST_ROOT/scripts-lib-backup"
+	assert_failure
+	assert_output --partial "unable to locate scripts/lib"
+}
+
+@test "screen-brightness-mqtt covers max-missing on initial publish" {
+	export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export RETRO_HA_DRY_RUN=1
+
+	local d
+	d="$TEST_ROOT/sys/class/backlight/test"
+	mkdir -p "$d"
+	echo 0 >"$d/brightness"
+	# no max_brightness
+	export RETRO_HA_BACKLIGHT_NAME="test"
+
+	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
+	write_mosquitto_sub_stub ""
+
+	run bash "$RETRO_HA_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+	assert_success
+}
+
+@test "screen-brightness-mqtt covers max-invalid on initial publish" {
+	export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export RETRO_HA_DRY_RUN=1
+
+	local d
+	d="$TEST_ROOT/sys/class/backlight/test"
+	mkdir -p "$d"
+	echo 0 >"$d/brightness"
+	echo 0 >"$d/max_brightness"
+	export RETRO_HA_BACKLIGHT_NAME="test"
+
+	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
+	write_mosquitto_sub_stub ""
+
+	run bash "$RETRO_HA_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+	assert_success
+}
+
+@test "screen-brightness-mqtt clamps percent to 100 when raw exceeds max" {
+	export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export RETRO_HA_DRY_RUN=1
+
+	make_fake_backlight "test" "100" "1000"
+	export RETRO_HA_BACKLIGHT_NAME="test"
+
+	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
+	write_mosquitto_sub_stub ""
+
+	run bash "$RETRO_HA_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+	assert_success
+	assert_file_contains "$TEST_ROOT/calls.log" "-m 100"
+}
+
+@test "screen-brightness-mqtt ignores out-of-range payload (101)" {
+	export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export RETRO_HA_DRY_RUN=1
+
+	make_fake_backlight "test" "100" "0"
+	export RETRO_HA_BACKLIGHT_NAME="test"
+
+	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
+	write_mosquitto_sub_stub "retro-ha/screen/brightness/set 101"
+
+	run bash "$RETRO_HA_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+	assert_success
 }
 
 @test "screen-brightness-mqtt mosq_args includes auth + tls options" {

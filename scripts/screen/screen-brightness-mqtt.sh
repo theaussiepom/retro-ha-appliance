@@ -158,9 +158,7 @@ read_brightness_percent() {
   # Round to nearest whole percent.
   local percent
   percent=$(((raw * 100 + (max / 2)) / max))
-  if ((percent < 0)); then
-    percent=0
-  elif ((percent > 100)); then
+  if ((percent > 100)); then
     percent=100
   fi
 
