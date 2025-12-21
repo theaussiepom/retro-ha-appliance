@@ -1,11 +1,11 @@
 # retro-ha-appliance
 
-Dual-mode Raspberry Pi appliance with strict display ownership:
+This repo turns a Raspberry Pi into a dual-mode appliance with strict display ownership:
 
 - Home Assistant kiosk mode (default): full-screen Chromium
 - RetroPie mode (on-demand): launched by controller input
 
-The design prioritizes determinism, recoverability, and fail-open behavior.
+The focus is determinism, recoverability, and fail-open behavior (if the HA kiosk isn’t healthy, you can still get into RetroPie).
 
 ## Documentation
 
@@ -14,7 +14,7 @@ The design prioritizes determinism, recoverability, and fail-open behavior.
 ## Requirements
 
 - Raspberry Pi with display output and USB controller(s)
-- Raspberry Pi OS (Debian-based; systemd)
+- Raspberry Pi OS (Debian-based; uses systemd for services)
 - Network access on first boot (to fetch the repo)
 
 ## Installation
@@ -22,7 +22,7 @@ The design prioritizes determinism, recoverability, and fail-open behavior.
 ### Pi Imager + cloud-init (recommended)
 
 1. Use Raspberry Pi Imager to flash Raspberry Pi OS.
-1. Provide cloud-init user-data based on
+1. Provide cloud-init user-data (first-boot provisioning) based on
    [examples/pi-imager/user-data.example.yml](examples/pi-imager/user-data.example.yml).
 1. Fill in at least:
 
@@ -87,7 +87,7 @@ The first-boot bootstrap and installer fetch this repo using:
 - `HA_URL` (required for kiosk): the full Home Assistant dashboard URL to open in Chromium.
 - `RETRO_HA_SCREEN_ROTATION` (optional): `normal`, `left`, `right`, or `inverted`.
 
-Xorg VTs:
+Xorg VTs (virtual terminals):
 
 - `RETRO_HA_X_VT` (optional, default: `7`): VT used by HA kiosk
 - `RETRO_HA_RETRO_X_VT` (optional, default: `8`): VT used by Retro mode
@@ -159,6 +159,7 @@ Safety / loop limits:
 
 - `RETRO_HA_LED_MQTT_ENABLED` (default: `0`; set to `1` to enable)
 - `RETRO_HA_MQTT_TOPIC_PREFIX` (default: `retro-ha`)
+- `RETRO_HA_LED_MQTT_POLL_SEC` (optional, default: `2`; poll sysfs and publish state changes made outside MQTT)
 
 Broker settings:
 
@@ -168,12 +169,29 @@ Broker settings:
 - `MQTT_PASSWORD` (optional)
 - `MQTT_TLS` (default: `0`; set to `1` to enable TLS)
 
+### Screen brightness MQTT bridge (optional)
+
+Controls the display backlight brightness via sysfs (`/sys/class/backlight`).
+
+- `RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED` (default: `0`; set to `1` to enable)
+- `RETRO_HA_MQTT_TOPIC_PREFIX` (default: `retro-ha`)
+- `RETRO_HA_BACKLIGHT_NAME` (optional; which backlight device under `/sys/class/backlight` to control; defaults to first found)
+- `RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC` (optional, default: `2`; poll sysfs and publish state changes made outside MQTT)
+
+Broker settings (same as LED MQTT bridge):
+
+- `MQTT_HOST` (required when enabled)
+- `MQTT_PORT` (default: `1883`)
+- `MQTT_USERNAME` (optional)
+- `MQTT_PASSWORD` (optional)
+- `MQTT_TLS` (default: `0`; set to `1` to enable TLS)
+
 ## Home Assistant LED control (optional)
 
-This project intentionally keeps the Raspberry Pi board LEDs **on by default** (health signal), but
-allows Home Assistant to turn them **off** (night mode) by driving sysfs on the appliance.
+By default the Raspberry Pi board LEDs are kept **on** as a simple “it’s alive” signal. Home Assistant can
+turn them **off** (night mode) by driving sysfs on the appliance.
 
-Because Home Assistant is typically running on a different host than the kiosk Pi, the appliance
+If Home Assistant is running on a different host than the kiosk Pi, MQTT is the bridge: the appliance
 exposes an **MQTT-controlled** LED switch.
 
 ### Overview
@@ -181,6 +199,7 @@ exposes an **MQTT-controlled** LED switch.
 - The Pi runs `retro-ha-led-mqtt.service`.
 - It subscribes to MQTT topics and calls a local sysfs writer.
 - Home Assistant publishes `ON`/`OFF` to those topics.
+- The appliance also periodically polls sysfs and republishes retained state so Home Assistant reflects changes made outside MQTT.
 
 ### MQTT topics
 
@@ -197,7 +216,7 @@ Payloads:
 - `ON`
 - `OFF`
 
-State topics (retained):
+State topics (retained, so Home Assistant can see the current state immediately):
 
 - `retro-ha/led/act/state`
 - `retro-ha/led/pwr/state`
@@ -227,6 +246,37 @@ mqtt:
       command_topic: "retro-ha/led/all/set"
       payload_on: "ON"
       payload_off: "OFF"
+```
+
+## Home Assistant screen brightness control (optional)
+
+### Overview
+
+- The Pi runs `retro-ha-screen-brightness-mqtt.service`.
+- Home Assistant publishes brightness percent (0-100).
+- The appliance writes to `/sys/class/backlight/<device>/brightness` and publishes retained state.
+- The appliance also periodically polls sysfs and republishes retained state so Home Assistant reflects changes made outside MQTT.
+
+### MQTT topics
+
+Default prefix: `retro-ha` (set `RETRO_HA_MQTT_TOPIC_PREFIX`).
+
+- Command: `retro-ha/screen/brightness/set` (payload: `0`-`100`)
+- State (retained): `retro-ha/screen/brightness/state` (payload: `0`-`100`)
+
+### Home Assistant YAML example
+
+Example number entity:
+
+```yaml
+mqtt:
+  number:
+    - name: "Retro HA Screen Brightness"
+      command_topic: "retro-ha/screen/brightness/set"
+      state_topic: "retro-ha/screen/brightness/state"
+      min: 0
+      max: 100
+      step: 1
 ```
 
 ## Operation

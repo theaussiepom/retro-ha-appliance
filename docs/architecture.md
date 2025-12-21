@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes how retro-ha-appliance is structured and how its components interact at runtime.
+This doc is a quick tour of how retro-ha-appliance is put together and what talks to what at runtime.
 
 ## Goals
 
@@ -11,7 +11,7 @@ This document describes how retro-ha-appliance is structured and how its compone
 - Fail open: if kiosk mode is unhealthy, RetroPie remains reachable.
 - Keep gameplay independent from network storage.
 
-## Non-goals
+## Out of scope
 
 - A full desktop environment.
 - Running both modes simultaneously.
@@ -19,8 +19,8 @@ This document describes how retro-ha-appliance is structured and how its compone
 
 ## High-level component map
 
-Runtime is orchestrated by systemd. Scripts are installed under `/usr/local/lib/retro-ha` and
-configuration is loaded from `/etc/retro-ha/config.env`.
+systemd (the Linux service manager) runs the show. Scripts are installed under `/usr/local/lib/retro-ha`
+and configuration is loaded from `/etc/retro-ha/config.env`.
 
 ### Systemd units
 
@@ -45,17 +45,21 @@ Periodic maintenance:
 Optional integration:
 
 - `retro-ha-led-mqtt.service`: optional MQTT-driven LED control bridge.
+- `retro-ha-screen-brightness-mqtt.service`: optional MQTT-driven screen brightness control bridge.
 
 ### Installed layout
 
 - `/etc/retro-ha/config.env`: runtime configuration.
 - `/usr/local/lib/retro-ha/*.sh`: installed scripts.
-- `/usr/local/bin/retro-ha-led-mqtt.sh`: MQTT LED bridge entrypoint.
+- `/usr/local/lib/retro-ha/retro-ha-led-mqtt.sh`: MQTT LED bridge (used by systemd).
+- `/usr/local/bin/retro-ha-led-mqtt.sh`: MQTT LED bridge convenience entrypoint.
+- `/usr/local/lib/retro-ha/retro-ha-screen-brightness-mqtt.sh`: MQTT screen brightness bridge (used by systemd).
+- `/usr/local/bin/retro-ha-screen-brightness-mqtt.sh`: MQTT screen brightness convenience entrypoint.
 - `/var/lib/retro-ha/`: appliance state and data (ROMs, saves, marker file).
 
 ## Boot and installation flow
 
-The first boot flow is designed to be idempotent.
+First boot is designed to be idempotent (it’s safe to re-run).
 
 1. A cloud-init user-data file writes `/etc/retro-ha/config.env` and installs
    `/etc/systemd/system/retro-ha-install.service` and `/usr/local/lib/retro-ha/bootstrap.sh`.
@@ -67,11 +71,11 @@ The first boot flow is designed to be idempotent.
 4. `scripts/install.sh` installs packages and copies scripts/units into their installed locations,
    enables the required services/timers, then writes the installed marker.
 
-Re-running install without reflashing is supported by deleting the marker file and restarting the unit.
+If you want to re-run install without reflashing, delete the marker file and restart the unit.
 
 ## Mode ownership and display
 
-Both modes start X explicitly via `xinit` and run on fixed VTs:
+Both modes start the X server (Xorg) explicitly via `xinit` and run on fixed VTs (virtual terminals):
 
 - HA kiosk: VT7 (`RETRO_HA_X_VT`, default `7`)
 - Retro mode: VT8 (`RETRO_HA_RETRO_X_VT`, default `8`)
@@ -136,14 +140,26 @@ The storage design separates gameplay data from network availability.
 
 ## LED behavior and MQTT bridge
 
-LED control is done by writing to sysfs via `ledctl.sh`.
+LED control is done by writing to sysfs (the Linux kernel device filesystem) via `ledctl.sh`.
 
 If enabled, `retro-ha-led-mqtt.service` subscribes to MQTT topics (default prefix `retro-ha`) and calls
-`ledctl.sh` to toggle ACT/PWR LEDs. It also publishes retained state topics for Home Assistant UI.
+`ledctl.sh` to toggle ACT/PWR LEDs.
+
+It publishes retained state topics (MQTT “retained messages”) for Home Assistant UI and periodically
+polls sysfs so Home Assistant also reflects LED changes made outside MQTT.
+
+## Screen brightness and MQTT bridge
+
+Screen brightness control is done by writing to sysfs via `/sys/class/backlight/<device>/brightness`.
+
+If enabled, `retro-ha-screen-brightness-mqtt.service` subscribes to a brightness percent command topic
+(default prefix `retro-ha`), writes the corresponding raw sysfs value, and publishes retained state.
+
+It also periodically polls sysfs so Home Assistant reflects brightness changes made outside MQTT.
 
 ## Observability and debugging
 
-- Journald is the primary log sink.
+- Journald (systemd’s logging) is the primary log sink.
 - Most issues can be diagnosed with:
 
 ```bash
