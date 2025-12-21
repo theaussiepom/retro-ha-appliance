@@ -55,7 +55,9 @@ yaml_files=(
 )
 existing_yaml=()
 for f in "${yaml_files[@]}"; do
-  [ -f "$f" ] && existing_yaml+=("$f") || true
+  if [ -f "$f" ]; then
+    existing_yaml+=("$f")
+  fi
 done
 if [ ${#existing_yaml[@]} -eq 0 ]; then
   echo "No YAML files found in expected locations, skipping."
@@ -97,7 +99,9 @@ unit_files=(
 )
 existing_units=()
 for u in "${unit_files[@]}"; do
-  [ -f "$u" ] && existing_units+=("$u") || true
+  if [ -f "$u" ]; then
+    existing_units+=("$u")
+  fi
 done
 if [ ${#existing_units[@]} -eq 0 ]; then
   echo "No systemd unit files found under systemd/, skipping."
@@ -119,7 +123,9 @@ md_files=(
 )
 existing_md=()
 for f in "${md_files[@]}"; do
-  [ -f "$f" ] && existing_md+=("$f") || true
+  if [ -f "$f" ]; then
+    existing_md+=("$f")
+  fi
 done
 if [ ${#existing_md[@]} -eq 0 ]; then
   echo "No markdown files found, skipping."
