@@ -40,12 +40,12 @@ __retro_ha_led_mqtt_sub_pid=""
 
 led_mqtt_cleanup() {
   if [[ -n "${__retro_ha_led_mqtt_poller_pid:-}" ]]; then
-    kill "${__retro_ha_led_mqtt_poller_pid}" 2>/dev/null || true
+    kill "${__retro_ha_led_mqtt_poller_pid}" 2> /dev/null || true
   fi
   if [[ -n "${__retro_ha_led_mqtt_sub_pid:-}" ]]; then
-    kill "${__retro_ha_led_mqtt_sub_pid}" 2>/dev/null || true
+    kill "${__retro_ha_led_mqtt_sub_pid}" 2> /dev/null || true
   fi
-  exec 3<&- 2>/dev/null || true
+  exec 3<&- 2> /dev/null || true
 }
 
 mosq_args() {
@@ -124,13 +124,13 @@ led_state_payload() {
   fi
 
   local raw
-  raw="$(tr -d '[:space:]' < "$brightness_file" 2>/dev/null || true)"
+  raw="$(tr -d '[:space:]' < "$brightness_file" 2> /dev/null || true)"
   if [[ ! "$raw" =~ ^[0-9]+$ ]]; then
     cover_path "led-mqtt:state-brightness-invalid"
     return 1
   fi
 
-  if (( raw > 0 )); then
+  if ((raw > 0)); then
     cover_path "led-mqtt:state-on"
     printf '%s\n' "ON"
   else

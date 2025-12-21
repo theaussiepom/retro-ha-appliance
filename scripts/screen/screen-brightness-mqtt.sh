@@ -34,12 +34,12 @@ __retro_ha_screen_brightness_mqtt_sub_pid=""
 
 screen_brightness_mqtt_cleanup() {
   if [[ -n "${__retro_ha_screen_brightness_mqtt_poller_pid:-}" ]]; then
-    kill "${__retro_ha_screen_brightness_mqtt_poller_pid}" 2>/dev/null || true
+    kill "${__retro_ha_screen_brightness_mqtt_poller_pid}" 2> /dev/null || true
   fi
   if [[ -n "${__retro_ha_screen_brightness_mqtt_sub_pid:-}" ]]; then
-    kill "${__retro_ha_screen_brightness_mqtt_sub_pid}" 2>/dev/null || true
+    kill "${__retro_ha_screen_brightness_mqtt_sub_pid}" 2> /dev/null || true
   fi
-  exec 3<&- 2>/dev/null || true
+  exec 3<&- 2> /dev/null || true
 }
 
 mosq_args() {
@@ -111,7 +111,7 @@ read_max_brightness() {
   fi
 
   cover_path "screen-brightness-mqtt:max-present"
-  tr -d '[:space:]' <"$f"
+  tr -d '[:space:]' < "$f"
 }
 
 write_brightness_raw() {
@@ -126,7 +126,7 @@ write_brightness_raw() {
   fi
 
   cover_path "screen-brightness-mqtt:write-exec"
-  printf '%s\n' "$raw" >"$f"
+  printf '%s\n' "$raw" > "$f"
 }
 
 read_brightness_percent() {
@@ -137,7 +137,7 @@ read_brightness_percent() {
     return 1
   fi
 
-  if [[ ! "$max" =~ ^[0-9]+$ ]] || (( max <= 0 )); then
+  if [[ ! "$max" =~ ^[0-9]+$ ]] || ((max <= 0)); then
     cover_path "screen-brightness-mqtt:max-invalid"
     return 1
   fi
@@ -149,7 +149,7 @@ read_brightness_percent() {
   fi
 
   local raw
-  raw="$(tr -d '[:space:]' <"$raw_file" 2>/dev/null || true)"
+  raw="$(tr -d '[:space:]' < "$raw_file" 2> /dev/null || true)"
   if [[ ! "$raw" =~ ^[0-9]+$ ]]; then
     cover_path "screen-brightness-mqtt:read-invalid"
     return 1
@@ -157,10 +157,10 @@ read_brightness_percent() {
 
   # Round to nearest whole percent.
   local percent
-  percent=$(( (raw * 100 + (max / 2)) / max ))
-  if (( percent < 0 )); then
+  percent=$(((raw * 100 + (max / 2)) / max))
+  if ((percent < 0)); then
     percent=0
-  elif (( percent > 100 )); then
+  elif ((percent > 100)); then
     percent=100
   fi
 
@@ -243,7 +243,7 @@ handle_set() {
   local prefix="$2"
 
   local payload
-  payload="$(tr -d '[:space:]' <<<"$payload_raw")"
+  payload="$(tr -d '[:space:]' <<< "$payload_raw")"
 
   if [[ ! "$payload" =~ ^[0-9]{1,3}$ ]]; then
     cover_path "screen-brightness-mqtt:invalid-payload"
@@ -252,7 +252,7 @@ handle_set() {
   fi
 
   local percent="$payload"
-  if (( percent < 0 || percent > 100 )); then
+  if ((percent < 0 || percent > 100)); then
     cover_path "screen-brightness-mqtt:invalid-payload"
     log "Ignoring out-of-range brightness payload '$payload_raw'"
     return 0
@@ -270,13 +270,13 @@ handle_set() {
     die "Backlight max_brightness missing: $dir/max_brightness"
   fi
 
-  if [[ ! "$max" =~ ^[0-9]+$ ]] || (( max <= 0 )); then
+  if [[ ! "$max" =~ ^[0-9]+$ ]] || ((max <= 0)); then
     cover_path "screen-brightness-mqtt:max-invalid"
     die "Invalid max_brightness: $max"
   fi
 
   local raw
-  raw=$(( percent * max / 100 ))
+  raw=$((percent * max / 100))
 
   cover_path "screen-brightness-mqtt:set"
   write_brightness_raw "$dir" "$raw"
