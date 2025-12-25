@@ -24,6 +24,17 @@ teardown() {
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:not-configured"
 }
 
+@test "mount-nfs records legacy-nfs-path when NFS_PATH is used" {
+  # Legacy: NFS_PATH used to configure ROMs export.
+  unset NFS_ROMS_PATH
+  export NFS_PATH=/export/roms
+  unset NFS_SERVER
+
+  run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
+  assert_success
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:legacy-nfs-path"
+}
+
 @test "mount-nfs records already-mounted path" {
   export NFS_SERVER=server
   export NFS_ROMS_PATH=/export
@@ -67,6 +78,22 @@ teardown() {
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:not-configured"
+}
+
+@test "mount-nfs-backup records legacy server/path IDs when old vars are set" {
+  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+
+  # Legacy vars should be ignored/translated, but still tracked for coverage.
+  export KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER=legacy-server
+  export KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH=/export/backup
+
+  # Keep current vars unset so script exits via not-configured without attempting mount.
+  unset NFS_SERVER NFS_SAVE_BACKUP_PATH
+
+  run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
+  assert_success
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:legacy-server-ignored"
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:legacy-path"
 }
 
 @test "mount-nfs-backup already-mounted path" {

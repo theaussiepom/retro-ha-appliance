@@ -253,6 +253,38 @@ EOF
 	assert_file_contains "$TEST_ROOT/calls.log" "write_brightness"
 }
 
+@test "screen-brightness-mqtt records backlight-name-file when name is set to brightness" {
+	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export KIOSK_RETROPIE_DRY_RUN=1
+
+	make_fake_backlight "auto0" "100" "0"
+	export KIOSK_BACKLIGHT_NAME="brightness"
+
+	make_isolated_path_with_stubs dirname mosquitto_pub
+	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+
+	run handle_set "50" "kiosk-retropie"
+	assert_success
+	assert_file_contains "$TEST_ROOT/calls.log" "PATH screen-brightness-mqtt:backlight-name-file"
+}
+
+@test "screen-brightness-mqtt records backlight-name-missing when named dir does not exist" {
+	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export MQTT_HOST="mqtt.local"
+	export KIOSK_RETROPIE_DRY_RUN=1
+
+	make_fake_backlight "auto0" "100" "0"
+	export KIOSK_BACKLIGHT_NAME="does-not-exist"
+
+	make_isolated_path_with_stubs dirname mosquitto_pub
+	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
+
+	run handle_set "50" "kiosk-retropie"
+	assert_success
+	assert_file_contains "$TEST_ROOT/calls.log" "PATH screen-brightness-mqtt:backlight-name-missing"
+}
+
 @test "screen-brightness-mqtt fails when no backlight exists" {
 	run bash -c '
 		set -euo pipefail
