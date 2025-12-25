@@ -1,9 +1,11 @@
 # kiosk-retropie
 
-kiosk-retropie is a Bash-first Raspberry Pi appliance that can switch a single display between two modes: a
-full-screen Chromium kiosk for day-to-day use, and an on-demand RetroPie session triggered by controller input.
-It’s designed to boot predictably, recover automatically from failures, and keep your saves safe even if
-networking (or NFS/MQTT) is unavailable.
+This repo is a set of scripts + systemd units that turn a Raspberry Pi into a simple “single screen” appliance.
+Most of the time it boots straight into a full-screen Chromium kiosk, but you can drop into RetroPie on demand
+with a controller button press.
+
+It’s built to be boring in the best way: predictable boots, clean mode switching, sensible failover, and local
+saves that still work even when networking (or NFS/MQTT) isn’t behaving.
 
 ## Quick start (dev + CI)
 
@@ -114,7 +116,7 @@ flowchart TD
 
 1. Use Raspberry Pi Imager to flash Raspberry Pi OS.
 1. Provide cloud-init user-data (first-boot provisioning) based on
-   [examples/pi-imager/user-data.example.yml](examples/pi-imager/user-data.example.yml).
+  [examples/user-data.example.yml](examples/user-data.example.yml).
 1. Fill in at least:
 
 ```bash
