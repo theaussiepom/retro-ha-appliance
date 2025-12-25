@@ -2,24 +2,24 @@
 
 # shellcheck disable=SC1090,SC1091
 
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-support/load"
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-assert/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-support/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-assert/load"
 
 setup() {
-  export RETRO_HA_ROOT
-  RETRO_HA_ROOT="$(mktemp -d)"
+  export KIOSK_RETROPIE_ROOT
+  KIOSK_RETROPIE_ROOT="$(mktemp -d)"
 
-  export RETRO_HA_CALLS_FILE
-  RETRO_HA_CALLS_FILE="${RETRO_HA_ROOT}/calls.txt"
+  export KIOSK_RETROPIE_CALLS_FILE
+  KIOSK_RETROPIE_CALLS_FILE="${KIOSK_RETROPIE_ROOT}/calls.txt"
 
-  export RETRO_HA_CALLS_FILE_APPEND=""
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_CALLS_FILE_APPEND=""
+  export KIOSK_RETROPIE_DRY_RUN=1
 
   # Provide an executable LEDCTL stub and force the script to use it.
-  export RETRO_HA_LEDCTL_PATH
-  RETRO_HA_LEDCTL_PATH="${RETRO_HA_ROOT}/ledctl.sh"
-  printf '#!/usr/bin/env bash\necho ledctl "$@"\n' >"$RETRO_HA_LEDCTL_PATH"
-  chmod +x "$RETRO_HA_LEDCTL_PATH"
+  export KIOSK_RETROPIE_LEDCTL_PATH
+  KIOSK_RETROPIE_LEDCTL_PATH="${KIOSK_RETROPIE_ROOT}/ledctl.sh"
+  printf '#!/usr/bin/env bash\necho ledctl "$@"\n' >"$KIOSK_RETROPIE_LEDCTL_PATH"
+  chmod +x "$KIOSK_RETROPIE_LEDCTL_PATH"
 
   export MQTT_HOST="broker"
   unset MQTT_PORT || true
@@ -28,11 +28,11 @@ setup() {
   unset MQTT_TLS || true
 
   # Source the script under test (guarded main).
-  source "${RETRO_HA_REPO_ROOT}/scripts/leds/led-mqtt.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/leds/led-mqtt.sh"
 }
 
 test_teardown() {
-  rm -rf "${RETRO_HA_ROOT}" || true
+  rm -rf "${KIOSK_RETROPIE_ROOT}" || true
 }
 
 @test "mosq_args emits minimal required args" {
@@ -53,7 +53,7 @@ test_teardown() {
 }
 
 @test "handle_set ignores unknown payload" {
-  run handle_set act "maybe" "retro-ha"
+  run handle_set act "maybe" "kiosk-retropie"
   assert_success
 
   # Ignore PATH coverage lines; ensure there were no side-effect calls.
@@ -65,30 +65,30 @@ test_teardown() {
     fi
     non_path=$(grep -v "^PATH " "$f" || true)
     [[ -z "$non_path" ]]
-  ' bash "$RETRO_HA_CALLS_FILE"
+  ' bash "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
 }
 
 @test "handle_set runs ledctl and publishes state for act" {
-  run handle_set act "on" "retro-ha"
+  run handle_set act "on" "kiosk-retropie"
   assert_success
 
-  run bash -c 'grep -v "^PATH " "$1"' bash "$RETRO_HA_CALLS_FILE"
+  run bash -c 'grep -v "^PATH " "$1"' bash "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
 
   local expected
-  expected="${RETRO_HA_LEDCTL_PATH} act on"$'\n'"mosquitto_pub -h broker -p 1883 -t retro-ha/led/act/state -m ON -r"
+  expected="${KIOSK_RETROPIE_LEDCTL_PATH} act on"$'\n'"mosquitto_pub -h broker -p 1883 -t kiosk-retropie/led/act/state -m ON -r"
   assert_output "$expected"
 }
 
 @test "handle_set publishes both states for all" {
-  run handle_set all "OFF" "retro-ha"
+  run handle_set all "OFF" "kiosk-retropie"
   assert_success
 
-  run bash -c 'grep -v "^PATH " "$1"' bash "$RETRO_HA_CALLS_FILE"
+  run bash -c 'grep -v "^PATH " "$1"' bash "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
 
   local expected
-  expected="${RETRO_HA_LEDCTL_PATH} all off"$'\n'"mosquitto_pub -h broker -p 1883 -t retro-ha/led/act/state -m OFF -r"$'\n'"mosquitto_pub -h broker -p 1883 -t retro-ha/led/pwr/state -m OFF -r"
+  expected="${KIOSK_RETROPIE_LEDCTL_PATH} all off"$'\n'"mosquitto_pub -h broker -p 1883 -t kiosk-retropie/led/act/state -m OFF -r"$'\n'"mosquitto_pub -h broker -p 1883 -t kiosk-retropie/led/pwr/state -m OFF -r"
   assert_output "$expected"
 }

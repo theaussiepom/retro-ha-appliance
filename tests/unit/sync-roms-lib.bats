@@ -2,13 +2,13 @@
 
 # shellcheck disable=SC1090,SC1091
 
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-support/load"
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-assert/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-support/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-assert/load"
 
 setup() {
   # Provide cover_path for branch/path coverage markers in the library.
-  source "${RETRO_HA_REPO_ROOT}/scripts/lib/common.sh"
-  source "${RETRO_HA_REPO_ROOT}/scripts/lib/list.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/lib/common.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/lib/list.sh"
 }
 
 @test "split_list splits comma and whitespace" {

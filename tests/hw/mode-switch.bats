@@ -2,11 +2,11 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
 	setup_test_root
@@ -27,7 +27,7 @@ assert_calls_contains() {
 		local arg_str="${expected#systemctl }"
 		expected="systemctl $(printf '%q' "$arg_str")"
 	fi
-	assert_file_contains "$RETRO_HA_CALLS_FILE" "$expected"
+	assert_file_contains "$KIOSK_RETROPIE_CALLS_FILE" "$expected"
 }
 
 refute_file_contains() {
@@ -50,7 +50,7 @@ make_fake_input_device() {
 	# Name must match *event-joystick glob; realpath basename must start with "event".
 	ln -sf "../event0" "$by_id/usb-fake-event-joystick"
 
-	export RETRO_HA_INPUT_BY_ID_DIR="$by_id"
+	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id"
 	export FAKE_CONTROLLER_FIFO="$fifo"
 }
 
@@ -118,34 +118,34 @@ wait_for_exit() {
 	return 0
 }
 
-@test "TTY listener: Start while HA active stops kiosk and starts retro" {
+@test "TTY listener: Start while kiosk active stops kiosk and starts retro" {
 	make_fake_input_device
 	local fifo="$FAKE_CONTROLLER_FIFO"
 
 	local state_file="$TEST_ROOT/systemctl.state"
-	echo ":ha-kiosk.service:" >"$state_file"
+	echo ":kiosk.service:" >"$state_file"
 
 	LISTENER_LOG="$TEST_ROOT/controller-listener-tty.log"
-	RETRO_HA_INPUT_BY_ID_DIR="$RETRO_HA_INPUT_BY_ID_DIR" \
-		RETRO_HA_START_DEBOUNCE_SEC=0 \
-		RETRO_HA_MAX_TRIGGERS=1 \
-		RETRO_HA_MAX_LOOPS=200 \
+	KIOSK_RETROPIE_INPUT_BY_ID_DIR="$KIOSK_RETROPIE_INPUT_BY_ID_DIR" \
+		KIOSK_RETROPIE_START_DEBOUNCE_SEC=0 \
+		KIOSK_RETROPIE_MAX_TRIGGERS=1 \
+		KIOSK_RETROPIE_MAX_LOOPS=200 \
 		SYSTEMCTL_STATE_FILE="$state_file" \
-		bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
+		bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
 	local pid=$!
 
 	emit_key_presses "$fifo" 315
 
 	wait_for_exit "$pid" 5
 
-	assert_calls_contains "systemctl stop ha-kiosk.service"
+	assert_calls_contains "systemctl stop kiosk.service"
 	assert_calls_contains "systemctl start retro-mode.service"
-	# Conflicts simulation in stub should have made retro active and ha inactive.
+	# Conflicts simulation in stub should have made retro active and kiosk inactive.
 	assert_file_contains "$state_file" ":retro-mode.service:"
-	refute_file_contains "$state_file" ":ha-kiosk.service:"
+	refute_file_contains "$state_file" ":kiosk.service:"
 }
 
-@test "TTY listener: Start+A while Retro active stops retro and starts kiosk" {
+@test "TTY listener: Exit combo while Retro active stops retro and starts kiosk" {
 	make_fake_input_device
 	local fifo="$FAKE_CONTROLLER_FIFO"
 
@@ -153,13 +153,13 @@ wait_for_exit() {
 	echo ":retro-mode.service:" >"$state_file"
 
 	LISTENER_LOG="$TEST_ROOT/controller-listener-tty-combo.log"
-	RETRO_HA_INPUT_BY_ID_DIR="$RETRO_HA_INPUT_BY_ID_DIR" \
-		RETRO_HA_START_DEBOUNCE_SEC=0 \
-		RETRO_HA_MAX_TRIGGERS=1 \
-		RETRO_HA_MAX_LOOPS=200 \
-		RETRO_HA_COMBO_WINDOW_SEC=5 \
+	KIOSK_RETROPIE_INPUT_BY_ID_DIR="$KIOSK_RETROPIE_INPUT_BY_ID_DIR" \
+		KIOSK_RETROPIE_START_DEBOUNCE_SEC=0 \
+		KIOSK_RETROPIE_MAX_TRIGGERS=1 \
+		KIOSK_RETROPIE_MAX_LOOPS=200 \
+		KIOSK_RETROPIE_COMBO_WINDOW_SEC=5 \
 		SYSTEMCTL_STATE_FILE="$state_file" \
-		bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
+		bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
 	local pid=$!
 
 	# A then Start (single write so the listener sees a tight combo).
@@ -167,8 +167,8 @@ wait_for_exit() {
 	wait_for_exit "$pid" 5
 
 	assert_calls_contains "systemctl stop retro-mode.service"
-	assert_calls_contains "systemctl start ha-kiosk.service"
-	assert_file_contains "$state_file" ":ha-kiosk.service:"
+	assert_calls_contains "systemctl start kiosk.service"
+	assert_file_contains "$state_file" ":kiosk.service:"
 	refute_file_contains "$state_file" ":retro-mode.service:"
 }
 
@@ -178,17 +178,17 @@ wait_for_exit() {
 
 	run env \
 		SYSTEMCTL_STATE_FILE="$state_file" \
-		RETRO_HA_SKIP_LEDCTL=1 \
-		RETRO_HA_LIBDIR="$RETRO_HA_REPO_ROOT/scripts/mode" \
-		"$RETRO_HA_REPO_ROOT/scripts/healthcheck.sh"
+		KIOSK_RETROPIE_SKIP_LEDCTL=1 \
+		KIOSK_RETROPIE_LIBDIR="$KIOSK_RETROPIE_REPO_ROOT/scripts/mode" \
+		"$KIOSK_RETROPIE_REPO_ROOT/scripts/healthcheck.sh"
 
 	assert_success
-	assert_calls_contains "systemctl stop ha-kiosk.service"
+	assert_calls_contains "systemctl stop kiosk.service"
 	assert_calls_contains "systemctl start retro-mode.service"
 	assert_file_contains "$state_file" ":retro-mode.service:"
 }
 
-@test "Units: Retro mode returns to HA on exit and kiosk failover is configured" {
-	assert_file_contains "$RETRO_HA_REPO_ROOT/systemd/retro-mode.service" "ExecStopPost=/bin/systemctl start ha-kiosk.service"
-	assert_file_contains "$RETRO_HA_REPO_ROOT/systemd/ha-kiosk.service" "OnFailure=retro-ha-failover.service"
+@test "Units: Retro mode returns to kiosk on exit and kiosk failover is configured" {
+	assert_file_contains "$KIOSK_RETROPIE_REPO_ROOT/systemd/retro-mode.service" "ExecStopPost=/bin/systemctl start kiosk.service"
+	assert_file_contains "$KIOSK_RETROPIE_REPO_ROOT/systemd/kiosk.service" "OnFailure=kiosk-retropie-failover.service"
 }

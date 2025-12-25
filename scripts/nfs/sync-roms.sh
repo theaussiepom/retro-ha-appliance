@@ -22,15 +22,15 @@ source "$LIB_DIR/common.sh"
 source "$LIB_DIR/list.sh"
 
 main() {
-  export RETRO_HA_LOG_PREFIX="sync-roms"
+  export KIOSK_RETROPIE_LOG_PREFIX="sync-roms"
 
-  local mount_point="${RETRO_HA_NFS_MOUNT_POINT:-$(retro_ha_path /mnt/retro-ha-roms)}"
-  local source_subdir="${RETRO_HA_NFS_ROMS_SUBDIR:-}"
-  local dest_dir="${RETRO_HA_ROMS_DIR:-$(retro_ha_path /var/lib/retro-ha/retropie/roms)}"
-  local rsync_delete="${RETRO_HA_ROMS_SYNC_DELETE:-0}"
-  local dest_owner="${RETRO_HA_ROMS_OWNER:-retropi:retropi}"
-  local systems_allow="${RETRO_HA_ROMS_SYSTEMS:-}"
-  local systems_exclude="${RETRO_HA_ROMS_EXCLUDE_SYSTEMS:-}"
+  local mount_point="${KIOSK_RETROPIE_NFS_MOUNT_POINT:-$(kiosk_retropie_path /mnt/kiosk-retropie-roms)}"
+  local source_subdir="${KIOSK_RETROPIE_NFS_ROMS_SUBDIR:-}"
+  local dest_dir="${KIOSK_RETROPIE_ROMS_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/roms)}"
+  local rsync_delete="${KIOSK_RETROPIE_ROMS_SYNC_DELETE:-0}"
+  local dest_owner="${KIOSK_RETROPIE_ROMS_OWNER:-retropi:retropi}"
+  local systems_allow="${KIOSK_RETROPIE_ROMS_SYSTEMS:-}"
+  local systems_exclude="${KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS:-}"
 
   # Ensure NFS is mounted (no-op if not configured / unavailable)
   run_cmd "$SCRIPT_DIR/mount-nfs.sh" || true
@@ -71,7 +71,7 @@ main() {
   log "Syncing ROMs: $src/ -> $dest_dir/ (delete=$rsync_delete)"
 
   # Prefer RetroPie layout: roms/<system>/...
-  # If RETRO_HA_ROMS_SYSTEMS is set, only those system directories are synced.
+  # If KIOSK_RETROPIE_ROMS_SYSTEMS is set, only those system directories are synced.
   # Otherwise, all top-level directories under the source are synced.
   local -a allowlist=()
   local -a excludelist=()
@@ -123,6 +123,6 @@ main() {
   fi
 }
 
-if ! retro_ha_is_sourced; then
+if ! kiosk_retropie_is_sourced; then
   main "$@"
 fi

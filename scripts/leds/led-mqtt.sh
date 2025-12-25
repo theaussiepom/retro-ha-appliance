@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# A tiny MQTT subscriber that lets Home Assistant toggle the Pi LEDs.
+# A tiny MQTT subscriber that lets an MQTT client toggle the Pi LEDs.
 #
 # Requires:
 #   - mosquitto_sub + mosquitto_pub (package: mosquitto-clients)
-#   - scripts/leds/ledctl.sh installed at /usr/local/lib/retro-ha/ledctl.sh
+#   - scripts/leds/ledctl.sh installed at /usr/local/lib/kiosk-retropie/ledctl.sh
 #
-# Topics (default prefix: retro-ha):
+# Topics (default prefix: kiosk-retropie):
 #   <prefix>/led/act/set   payload: ON|OFF
 #   <prefix>/led/pwr/set   payload: ON|OFF
 #   <prefix>/led/all/set   payload: ON|OFF
@@ -24,7 +24,7 @@ if [[ -d "$SCRIPT_DIR/lib" ]]; then
 elif [[ -d "$SCRIPT_DIR/../lib" ]]; then
   LIB_DIR="$SCRIPT_DIR/../lib"
 else
-  echo "retro-ha-led-mqtt [error]: unable to locate scripts/lib" >&2
+  echo "kiosk-retropie-led-mqtt [error]: unable to locate scripts/lib" >&2
   exit 1
 fi
 
@@ -33,17 +33,17 @@ source "$LIB_DIR/logging.sh"
 # shellcheck source=scripts/lib/common.sh
 source "$LIB_DIR/common.sh"
 
-LEDCTL_PATH="${RETRO_HA_LEDCTL_PATH:-$(retro_ha_path /usr/local/lib/retro-ha/ledctl.sh)}"
+LEDCTL_PATH="${KIOSK_RETROPIE_LEDCTL_PATH:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie/ledctl.sh)}"
 
-__retro_ha_led_mqtt_poller_pid=""
-__retro_ha_led_mqtt_sub_pid=""
+__kiosk_retropie_led_mqtt_poller_pid=""
+__kiosk_retropie_led_mqtt_sub_pid=""
 
 led_mqtt_cleanup() {
-  if [[ -n "${__retro_ha_led_mqtt_poller_pid:-}" ]]; then
-    kill "${__retro_ha_led_mqtt_poller_pid}" 2> /dev/null || true
+  if [[ -n "${__kiosk_retropie_led_mqtt_poller_pid:-}" ]]; then
+    kill "${__kiosk_retropie_led_mqtt_poller_pid}" 2> /dev/null || true
   fi
-  if [[ -n "${__retro_ha_led_mqtt_sub_pid:-}" ]]; then
-    kill "${__retro_ha_led_mqtt_sub_pid}" 2> /dev/null || true
+  if [[ -n "${__kiosk_retropie_led_mqtt_sub_pid:-}" ]]; then
+    kill "${__kiosk_retropie_led_mqtt_sub_pid}" 2> /dev/null || true
   fi
   exec 3<&- 2> /dev/null || true
 }
@@ -107,8 +107,8 @@ led_state_payload() {
 
   local led_name=""
   case "$target" in
-    act) led_name="${RETRO_HA_ACT_LED:-led0}" ;;
-    pwr) led_name="${RETRO_HA_PWR_LED:-led1}" ;;
+    act) led_name="${KIOSK_RETROPIE_ACT_LED:-led0}" ;;
+    pwr) led_name="${KIOSK_RETROPIE_PWR_LED:-led1}" ;;
     *)
       cover_path "led-mqtt:state-invalid-target"
       return 1
@@ -116,7 +116,7 @@ led_state_payload() {
   esac
 
   local dir
-  dir="$(retro_ha_path "/sys/class/leds/${led_name}")"
+  dir="$(kiosk_retropie_path "/sys/class/leds/${led_name}")"
   local brightness_file="$dir/brightness"
   if [[ ! -f "$brightness_file" ]]; then
     cover_path "led-mqtt:state-brightness-missing"
@@ -156,8 +156,8 @@ publish_led_states_once() {
 led_state_poller() {
   local prefix="$1"
 
-  local poll_sec="${RETRO_HA_LED_MQTT_POLL_SEC:-2}"
-  local max_loops="${RETRO_HA_LED_MQTT_MAX_LOOPS:-0}"
+  local poll_sec="${KIOSK_RETROPIE_LED_MQTT_POLL_SEC:-2}"
+  local max_loops="${KIOSK_RETROPIE_LED_MQTT_MAX_LOOPS:-0}"
   local loops=0
 
   local last_act=""
@@ -228,7 +228,7 @@ handle_set() {
 
   run_cmd "$LEDCTL_PATH" "$target" "$state"
 
-  # Publish retained state for HA UI.
+  # Publish retained state for dashboard/UI.
   case "$target" in
     act | pwr)
       cover_path "led-mqtt:target-single"
@@ -243,11 +243,11 @@ handle_set() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retro-ha-led-mqtt"
+  export KIOSK_RETROPIE_LOG_PREFIX="kiosk-retropie-led-mqtt"
 
-  if [[ "${RETRO_HA_LED_MQTT_ENABLED:-0}" != "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_LED_MQTT_ENABLED:-0}" != "1" ]]; then
     cover_path "led-mqtt:disabled"
-    log "RETRO_HA_LED_MQTT_ENABLED!=1; exiting (disabled)."
+    log "KIOSK_RETROPIE_LED_MQTT_ENABLED!=1; exiting (disabled)."
     exit 0
   fi
 
@@ -256,7 +256,7 @@ main() {
     die "MQTT_HOST is required"
   fi
 
-  local prefix="${RETRO_HA_MQTT_TOPIC_PREFIX:-retro-ha}"
+  local prefix="${KIOSK_RETROPIE_MQTT_TOPIC_PREFIX:-kiosk-retropie}"
   local topic_filter="${prefix}/led/+/set"
 
   local args=()
@@ -270,17 +270,17 @@ main() {
 
   cover_path "led-mqtt:subscribing"
 
-  # Publish initial state so HA is in sync even if a change happened outside MQTT.
+  # Publish initial state so state is in sync even if a change happened outside MQTT.
   cover_path "led-mqtt:state-initial"
   publish_led_states_once "$prefix"
 
-  # Background poller: keep HA in sync with any non-MQTT changes.
+  # Background poller: keep state in sync with any non-MQTT changes.
   led_state_poller "$prefix" &
-  __retro_ha_led_mqtt_poller_pid=$!
+  __kiosk_retropie_led_mqtt_poller_pid=$!
 
   # Start subscriber via process substitution so we can track its PID and clean up.
   exec 3< <(mosquitto_sub "${args[@]}" -v -t "$topic_filter")
-  __retro_ha_led_mqtt_sub_pid=$!
+  __kiosk_retropie_led_mqtt_sub_pid=$!
 
   trap led_mqtt_cleanup EXIT INT TERM
 

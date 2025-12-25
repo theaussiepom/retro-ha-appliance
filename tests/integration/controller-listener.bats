@@ -2,23 +2,23 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
 	setup_test_root
 
 	# Deterministic behavior: no debounce and exit after first trigger.
-	export RETRO_HA_START_DEBOUNCE_SEC=0
-	export RETRO_HA_MAX_TRIGGERS=1
+	export KIOSK_RETROPIE_START_DEBOUNCE_SEC=0
+	export KIOSK_RETROPIE_MAX_TRIGGERS=1
 	# Safety: avoid infinite loops if something goes wrong.
-	export RETRO_HA_MAX_LOOPS=200
+	export KIOSK_RETROPIE_MAX_LOOPS=200
 
 	# Default to "not active" for services unless a test overrides.
-	export SYSTEMCTL_ACTIVE_HA=1
+	export SYSTEMCTL_ACTIVE_KIOSK=1
 	export SYSTEMCTL_ACTIVE_RETRO=1
 }
 
@@ -46,7 +46,7 @@ make_fake_controller_fifo() {
 	# Name must match *event-joystick glob in the production scripts.
 	ln -s "$fifo" "$by_id_dir/fake-event-joystick"
 
-	export RETRO_HA_INPUT_BY_ID_DIR="$by_id_dir"
+	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 	export FAKE_CONTROLLER_FIFO="$fifo"
 }
 
@@ -160,61 +160,61 @@ assert_calls_contains() {
 	return 1
 }
 
-@test "HA mode listener: Start press starts retro-mode when HA active" {
+@test "Kiosk mode listener: Start press starts retro-mode when kiosk active" {
 	make_fake_controller_fifo
 	local fifo="$FAKE_CONTROLLER_FIFO"
 
 	# Preconditions:
-	# - HA is active (exit 0)
+	# - kiosk is active (exit 0)
 	# - Retro is inactive (non-zero)
-	export SYSTEMCTL_ACTIVE_HA=0
+	export SYSTEMCTL_ACTIVE_KIOSK=0
 	export SYSTEMCTL_ACTIVE_RETRO=1
 
-	LISTENER_LOG="$TEST_ROOT/controller-listener-ha.log"
+	LISTENER_LOG="$TEST_ROOT/controller-listener-kiosk.log"
 	export LISTENER_LOG
 
-	bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-ha-mode.sh" >"$LISTENER_LOG" 2>&1 &
+	bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-kiosk-mode.sh" >"$LISTENER_LOG" 2>&1 &
 	LISTENER_PID=$!
 	export LISTENER_PID
 
 	# Best-effort readiness check; emit_start_press will also retry FIFO open.
 	wait_for_log_pattern "$LISTENER_LOG" "Listening on" 3 || true
 
-	emit_start_press "$fifo" "${RETRO_HA_START_BUTTON_CODE:-315}"
+	emit_start_press "$fifo" "${KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE:-315}"
 	wait_for_exit "$LISTENER_PID" 5 "$LISTENER_LOG"
 
-	assert_calls_contains "systemctl is-active --quiet ha-kiosk.service"
+	assert_calls_contains "systemctl is-active --quiet kiosk.service"
 	assert_calls_contains "systemctl start retro-mode.service"
 
-	# Sanity: should not stop HA in this mode.
-	if assert_file_contains "$TEST_ROOT/calls.log" "systemctl $(printf '%q' 'stop ha-kiosk.service')"; then
-		echo "unexpected stop ha-kiosk.service" >&2
+	# Sanity: should not stop kiosk in this mode.
+	if assert_file_contains "$TEST_ROOT/calls.log" "systemctl $(printf '%q' 'stop kiosk.service')"; then
+		echo "unexpected stop kiosk.service" >&2
 		return 1
 	fi
 }
 
-@test "HA mode listener: exits 0 when HA is not active" {
-	# HA inactive => early exit 0
-	export SYSTEMCTL_ACTIVE_HA=1
+@test "Kiosk mode listener: exits 0 when kiosk is not active" {
+	# kiosk inactive => early exit 0
+	export SYSTEMCTL_ACTIVE_KIOSK=1
 
 	# No devices needed; should short-circuit before scanning.
-	run bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-ha-mode.sh"
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-kiosk-mode.sh"
 	assert_success
 }
 
-@test "HA mode listener: exits 1 when no devices found" {
-	export SYSTEMCTL_ACTIVE_HA=0
+@test "Kiosk mode listener: exits 1 when no devices found" {
+	export SYSTEMCTL_ACTIVE_KIOSK=0
 	export SYSTEMCTL_ACTIVE_RETRO=1
 
 	local by_id_dir="$TEST_ROOT/dev/input/by-id"
 	mkdir -p "$by_id_dir"
-	export RETRO_HA_INPUT_BY_ID_DIR="$by_id_dir"
+	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 
-	run bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-ha-mode.sh"
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-kiosk-mode.sh"
 	assert_failure
 }
 
-@test "TTY listener: Start press stops HA then starts retro-mode" {
+@test "TTY listener: Start press stops kiosk then starts retro-mode" {
 	make_fake_controller_fifo
 	local fifo="$FAKE_CONTROLLER_FIFO"
 
@@ -224,27 +224,27 @@ assert_calls_contains() {
 	LISTENER_LOG="$TEST_ROOT/controller-listener-tty.log"
 	export LISTENER_LOG
 
-	bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
+	bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
 	LISTENER_PID=$!
 	export LISTENER_PID
 
 	wait_for_log_pattern "$LISTENER_LOG" "Listening on" 3 || true
 
-	emit_start_press "$fifo" "${RETRO_HA_START_BUTTON_CODE:-315}"
+	emit_start_press "$fifo" "${KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE:-315}"
 	wait_for_exit "$LISTENER_PID" 5 "$LISTENER_LOG"
 
-	assert_calls_contains "systemctl stop ha-kiosk.service"
+	assert_calls_contains "systemctl stop kiosk.service"
 	assert_calls_contains "systemctl start retro-mode.service"
 }
 
 @test "TTY listener: exits 1 when no devices found" {
 	local by_id_dir="$TEST_ROOT/dev/input/by-id"
 	mkdir -p "$by_id_dir"
-	export RETRO_HA_INPUT_BY_ID_DIR="$by_id_dir"
+	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 
 	# Ensure it doesn't short-circuit on retro already active.
 	export SYSTEMCTL_ACTIVE_RETRO=1
 
-	run bash "$RETRO_HA_REPO_ROOT/scripts/input/controller-listener-tty.sh"
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh"
 	assert_failure
 }

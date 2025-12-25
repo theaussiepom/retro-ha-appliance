@@ -1,0 +1,7 @@
+[Unit]
+Description=Fail over to RetroPie mode
+
+[Service]
+Type=oneshot
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/enter-retro-mode.sh

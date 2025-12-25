@@ -28,9 +28,9 @@ healthcheck_enter_retro_path() {
   local script_dir="${1:-$SCRIPT_DIR}"
 
   local enter
-  if [[ -n "${RETRO_HA_LIBDIR:-}" && -x "$RETRO_HA_LIBDIR/enter-retro-mode.sh" ]]; then
+  if [[ -n "${KIOSK_RETROPIE_LIBDIR:-}" && -x "$KIOSK_RETROPIE_LIBDIR/enter-retro-mode.sh" ]]; then
     cover_path "healthcheck:enter-retro-libdir"
-    enter="$RETRO_HA_LIBDIR/enter-retro-mode.sh"
+    enter="$KIOSK_RETROPIE_LIBDIR/enter-retro-mode.sh"
   elif [[ -x "$script_dir/enter-retro-mode.sh" ]]; then
     cover_path "healthcheck:enter-retro-scriptdir"
     enter="$script_dir/enter-retro-mode.sh"
@@ -39,19 +39,19 @@ healthcheck_enter_retro_path() {
     enter="$script_dir/mode/enter-retro-mode.sh"
   else
     cover_path "healthcheck:enter-retro-fallback"
-    enter="$(retro_ha_path /usr/local/lib/retro-ha)/enter-retro-mode.sh"
+    enter="$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)/enter-retro-mode.sh"
   fi
 
   printf '%s\n' "$enter"
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="healthcheck"
+  export KIOSK_RETROPIE_LOG_PREFIX="healthcheck"
 
-  # Fail-open principle: if we're not in HA mode or Retro mode, enter Retro mode.
+  # Fail-open principle: if we're not in kiosk mode or Retro mode, enter Retro mode.
   # This is intentionally simple and avoids network/URL probing.
-  if is_active ha-kiosk.service; then
-    log "HA kiosk active"
+  if is_active kiosk.service; then
+    log "Kiosk active"
     exit 0
   fi
   if is_active retro-mode.service; then

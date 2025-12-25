@@ -3,13 +3,13 @@ set -euo pipefail
 
 # Logging helpers.
 
-retro_ha__cover_path_raw() {
-  [[ "${RETRO_HA_PATH_COVERAGE:-0}" == "1" ]] || return 0
+kiosk_retropie__cover_path_raw() {
+  [[ "${KIOSK_RETROPIE_PATH_COVERAGE:-0}" == "1" ]] || return 0
 
   local path_id="${1:-}"
   [[ -n "$path_id" ]] || return 0
 
-  local path_file="${RETRO_HA_PATHS_FILE:-${RETRO_HA_CALLS_FILE_APPEND:-${RETRO_HA_CALLS_FILE:-}}}"
+  local path_file="${KIOSK_RETROPIE_PATHS_FILE:-${KIOSK_RETROPIE_CALLS_FILE_APPEND:-${KIOSK_RETROPIE_CALLS_FILE:-}}}"
   [[ -n "$path_file" ]] || return 0
 
   local dir
@@ -20,28 +20,28 @@ retro_ha__cover_path_raw() {
   printf 'PATH %s\n' "$path_id" >> "$path_file" 2> /dev/null || true
 }
 
-retro_ha_log_prefix() {
+kiosk_retropie_log_prefix() {
   # Allow callers to override the prefix for nicer logs.
-  if [[ -n "${RETRO_HA_LOG_PREFIX:-}" ]]; then
-    retro_ha__cover_path_raw "lib-logging:prefix-override"
+  if [[ -n "${KIOSK_RETROPIE_LOG_PREFIX:-}" ]]; then
+    kiosk_retropie__cover_path_raw "lib-logging:prefix-override"
   else
-    retro_ha__cover_path_raw "lib-logging:prefix-default"
+    kiosk_retropie__cover_path_raw "lib-logging:prefix-default"
   fi
-  echo "${RETRO_HA_LOG_PREFIX:-retro-ha}"
+  echo "${KIOSK_RETROPIE_LOG_PREFIX:-kiosk-retropie}"
 }
 
 log() {
-  retro_ha__cover_path_raw "lib-logging:log"
-  echo "$(retro_ha_log_prefix): $*" >&2
+  kiosk_retropie__cover_path_raw "lib-logging:log"
+  echo "$(kiosk_retropie_log_prefix): $*" >&2
 }
 
 warn() {
-  retro_ha__cover_path_raw "lib-logging:warn"
-  echo "$(retro_ha_log_prefix) [warn]: $*" >&2
+  kiosk_retropie__cover_path_raw "lib-logging:warn"
+  echo "$(kiosk_retropie_log_prefix) [warn]: $*" >&2
 }
 
 die() {
-  retro_ha__cover_path_raw "lib-logging:die"
-  echo "$(retro_ha_log_prefix) [error]: $*" >&2
+  kiosk_retropie__cover_path_raw "lib-logging:die"
+  echo "$(kiosk_retropie_log_prefix) [error]: $*" >&2
   exit 1
 }

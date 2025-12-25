@@ -30,7 +30,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -42,7 +42,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-permissions'
 
   lint-naming:
@@ -59,7 +59,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -71,7 +71,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-naming'
 
   lint-sh:
@@ -88,7 +88,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -100,7 +100,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-sh'
 
   test-all:
@@ -117,7 +117,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -129,7 +129,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh tests'
 
   test-coverage:
@@ -147,7 +147,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -160,7 +160,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh coverage'
 
       - name: Show kcov output paths
@@ -222,7 +222,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -234,7 +234,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-yaml'
 
   lint-systemd:
@@ -251,7 +251,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -263,7 +263,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-systemd'
 
   lint-markdown:
@@ -280,7 +280,7 @@ jobs:
         with:
           context: .
           file: .devcontainer/Dockerfile
-          tags: retro-ha-devcontainer:ci
+          tags: kiosk-retropie-devcontainer:ci
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -292,7 +292,7 @@ jobs:
           docker run --rm \
             -v "$PWD:/work" \
             -w /work \
-            retro-ha-devcontainer:ci \
+            kiosk-retropie-devcontainer:ci \
             bash -lc './scripts/ci.sh lint-markdown'
 
   runner-unit-tests:

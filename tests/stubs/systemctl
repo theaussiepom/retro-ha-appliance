@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-calls_file="${RETRO_HA_CALLS_FILE:-/dev/null}"
+calls_file="${KIOSK_RETROPIE_CALLS_FILE:-/dev/null}"
 printf 'systemctl %q\n' "$*" >>"$calls_file" || true
 
 state_file="${SYSTEMCTL_STATE_FILE:-}"
@@ -11,11 +11,10 @@ read_active_units() {
 		cat "$state_file"
 		return 0
 	fi
-	# Backwards-compatible behavior for existing tests.
-	# If no state file is configured, fall back to the env-driven flags.
+	# If no state file is configured, fall back to env-driven flags.
 	local active=":"
-	if [[ "${SYSTEMCTL_ACTIVE_HA:-1}" == "0" ]]; then
-		active+="ha-kiosk.service:"
+	if [[ "${SYSTEMCTL_ACTIVE_KIOSK:-1}" == "0" ]]; then
+		active+="kiosk.service:"
 	fi
 	if [[ "${SYSTEMCTL_ACTIVE_RETRO:-1}" == "0" ]]; then
 		active+="retro-mode.service:"
@@ -68,8 +67,8 @@ if [[ "$1" == "start" ]]; then
 	active="$(active_add "$active" "$unit")"
 	# Simulate the known unit conflicts for mode switching.
 	if [[ "$unit" == "retro-mode.service" ]]; then
-		active="$(active_del "$active" "ha-kiosk.service")"
-	elif [[ "$unit" == "ha-kiosk.service" ]]; then
+		active="$(active_del "$active" "kiosk.service")"
+	elif [[ "$unit" == "kiosk.service" ]]; then
 		active="$(active_del "$active" "retro-mode.service")"
 	fi
 	write_active_units "$active"

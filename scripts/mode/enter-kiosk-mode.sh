@@ -9,7 +9,7 @@ if [[ -d "$SCRIPT_DIR/lib" ]]; then
 elif [[ -d "$SCRIPT_DIR/../lib" ]]; then
   LIB_DIR="$SCRIPT_DIR/../lib"
 else
-  echo "enter-ha-mode [error]: unable to locate scripts/lib" >&2
+  echo "enter-kiosk-mode [error]: unable to locate scripts/lib" >&2
   exit 1
 fi
 
@@ -19,17 +19,17 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 main() {
-  export RETRO_HA_LOG_PREFIX="enter-ha-mode"
+  export KIOSK_RETROPIE_LOG_PREFIX="enter-kiosk-mode"
 
-  log "Switching to HA kiosk mode"
+  log "Switching to kiosk mode"
 
   # Stop RetroPie mode first to preserve single X ownership.
-  cover_path "enter-ha-mode:stop-retro"
+  cover_path "enter-kiosk-mode:stop-retro"
   svc_stop retro-mode.service || true
 
-  # Start HA kiosk.
-  cover_path "enter-ha-mode:start-ha"
-  svc_start ha-kiosk.service
+  # Start kiosk.
+  cover_path "enter-kiosk-mode:start-kiosk"
+  svc_start kiosk.service
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

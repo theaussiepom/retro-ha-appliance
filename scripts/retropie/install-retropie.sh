@@ -19,7 +19,7 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 require_root() {
-  if [[ "${RETRO_HA_ALLOW_NON_ROOT:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_ALLOW_NON_ROOT:-0}" == "1" ]]; then
     return 0
   fi
   if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
@@ -28,7 +28,7 @@ require_root() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retropie-install"
+  export KIOSK_RETROPIE_LOG_PREFIX="retropie-install"
 
   require_root
 
@@ -54,8 +54,8 @@ main() {
     die "Unable to resolve home directory for $user"
   fi
 
-  local setup_dir="${RETRO_HA_RETROPIE_SETUP_DIR:-$home_dir/RetroPie-Setup}"
-  local setup_repo="${RETRO_HA_RETROPIE_SETUP_REPO:-https://github.com/RetroPie/RetroPie-Setup.git}"
+  local setup_dir="${KIOSK_RETROPIE_RETROPIE_SETUP_DIR:-$home_dir/RetroPie-Setup}"
+  local setup_repo="${KIOSK_RETROPIE_RETROPIE_SETUP_REPO:-https://github.com/RetroPie/RetroPie-Setup.git}"
 
   if [[ ! -d "$setup_dir/.git" ]]; then
     cover_path "retropie-install:clone"
@@ -71,7 +71,7 @@ main() {
   log "Starting unattended basic_install (this may take a long time)"
   # This is the least interactive path RetroPie-Setup supports.
   # If it fails, we do not want to brick the appliance; caller can decide what to do.
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "retropie-install:dry-run"
     record_call "cd $setup_dir"
   else
@@ -82,6 +82,6 @@ main() {
   log "RetroPie install completed"
 }
 
-if ! retro_ha_is_sourced; then
+if ! kiosk_retropie_is_sourced; then
   main "$@"
 fi

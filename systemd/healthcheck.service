@@ -3,5 +3,5 @@ Description=Appliance healthcheck
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/etc/retro-ha/config.env
-ExecStart=/usr/local/lib/retro-ha/healthcheck.sh
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/healthcheck.sh

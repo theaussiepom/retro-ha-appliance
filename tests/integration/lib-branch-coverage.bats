@@ -2,11 +2,11 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
   setup_test_root
@@ -17,46 +17,46 @@ test_teardown() {
 }
 
 @test "lib branch coverage: x11/path/backup helper branches" {
-  # Source common first (provides cover_path + retro_ha_realpath_m).
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/common.sh"
+  # Source common first (provides cover_path + kiosk_retropie_realpath_m).
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/common.sh"
 
   # X11 helper branches.
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/x11.sh"
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/x11.sh"
 
   export XDG_RUNTIME_DIR="$TEST_ROOT/run/user/999"
-  run retro_ha_runtime_dir 999
+  run kiosk_retropie_runtime_dir 999
   assert_success
 
   unset XDG_RUNTIME_DIR
-  run retro_ha_runtime_dir 123
+  run kiosk_retropie_runtime_dir 123
   assert_success
 
-  run retro_ha_x_lock_paths ":0"
+  run kiosk_retropie_x_lock_paths ":0"
   assert_success
 
-  run retro_ha_xinit_exec_record "/x" ":0" "7"
+  run kiosk_retropie_xinit_exec_record "/x" ":0" "7"
   assert_success
 
-  run retro_ha_xinitrc_prelude
+  run kiosk_retropie_xinitrc_prelude
   assert_success
 
   # Path helper branches.
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/path.sh"
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/path.sh"
 
-  run retro_ha_path_is_under "/mnt/retro-ha-roms" "/mnt/retro-ha-roms"
+  run kiosk_retropie_path_is_under "/mnt/kiosk-retropie-roms" "/mnt/kiosk-retropie-roms"
   assert_success
 
-  run retro_ha_path_is_under "/mnt/retro-ha-roms" "/mnt/retro-ha-roms/snes"
+  run kiosk_retropie_path_is_under "/mnt/kiosk-retropie-roms" "/mnt/kiosk-retropie-roms/snes"
   assert_success
 
-  run retro_ha_path_is_under "/mnt/retro-ha-roms" "/mnt/retro-ha-roms2"
+  run kiosk_retropie_path_is_under "/mnt/kiosk-retropie-roms" "/mnt/kiosk-retropie-roms2"
   assert_failure
 
-  run retro_ha_path_is_under "/" "/etc/retro-ha/config.env"
+  run kiosk_retropie_path_is_under "/" "/etc/kiosk-retropie/config.env"
   assert_success
 
   # Backup helper branches.
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/backup.sh"
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/backup.sh"
 
   run save_backup_rsync_args 0
   assert_success

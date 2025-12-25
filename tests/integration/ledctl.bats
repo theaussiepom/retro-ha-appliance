@@ -2,11 +2,11 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
 	setup_test_root
@@ -25,7 +25,7 @@ teardown() {
 }
 
 @test "ledctl off writes trigger=none and brightness=0" {
-	run bash "$RETRO_HA_REPO_ROOT/scripts/leds/ledctl.sh" act off
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" act off
 	assert_success
 
 	run cat "$TEST_ROOT/sys/class/leds/led0/trigger"
@@ -38,7 +38,7 @@ teardown() {
 }
 
 @test "ledctl on sets brightness=1 and restores supported trigger" {
-	run bash "$RETRO_HA_REPO_ROOT/scripts/leds/ledctl.sh" act on
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" act on
 	assert_success
 
 	run cat "$TEST_ROOT/sys/class/leds/led0/brightness"

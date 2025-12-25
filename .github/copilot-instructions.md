@@ -1,4 +1,4 @@
-# GitHub Copilot instructions (retro-ha-appliance)
+# GitHub Copilot instructions (kiosk-retropie)
 
 These instructions describe how this repo is structured, how CI runs, and what “good changes” look like.
 
@@ -6,7 +6,7 @@ If anything here conflicts with an explicit user request in the chat, follow the
 
 ## 1) What this repo is
 
-`retro-ha-appliance` is a Bash-first project that ships scripts + systemd units to run a RetroPie/Retro mode and a Home Assistant kiosk mode, plus some helper services (NFS sync, backups, MQTT state).
+`kiosk-retropie` is a Bash-first project that ships scripts + systemd units to run a RetroPie/Retro mode and a kiosk mode (Chromium), plus some helper services (NFS sync, backups, MQTT state).
 
 The codebase emphasizes:
 - Script correctness and predictable behavior under `set -euo pipefail`
@@ -23,7 +23,7 @@ Preferred ways to run things:
 - One CI part: `./scripts/ci.sh lint-sh` (or other part names)
 - Make targets (when available): `make lint`, `make test-unit`, `make test-integration`, `make ci`
 
-The Makefile runs commands inside a Docker devcontainer image (`retro-ha-devcontainer:local`). If `docker` isn’t available, the Makefile may fall back to running locally.
+The Makefile runs commands inside a Docker devcontainer image (`kiosk-retropie-devcontainer:local`). If `docker` isn’t available, the Makefile may fall back to running locally.
 
 ## 3) CI/router model (important)
 
@@ -73,7 +73,7 @@ Vendored Bats libs are under:
 Do not edit vendored code unless explicitly requested.
 
 Bats patterns used here:
-- Many tests compute `RETRO_HA_REPO_ROOT` and then `load` helper libraries.
+- Many tests compute `KIOSK_RETROPIE_REPO_ROOT` and then `load` helper libraries.
 - Environment variables are often used as test inputs, and may be consumed by sourced scripts.
   - If VS Code/ShellCheck reports “appears unused” for such vars, exporting them is usually the correct fix.
 

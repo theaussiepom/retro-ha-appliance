@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "mosquitto_sub $*" >>"${RETRO_HA_CALLS_FILE:-/dev/null}" || true
+echo "mosquitto_sub $*" >>"${KIOSK_RETROPIE_CALLS_FILE:-/dev/null}" || true
 # Emit nothing and exit.
 exit 0

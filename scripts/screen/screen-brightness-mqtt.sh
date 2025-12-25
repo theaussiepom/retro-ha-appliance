@@ -7,7 +7,7 @@ set -euo pipefail
 #   - mosquitto_sub + mosquitto_pub (package: mosquitto-clients)
 #   - a writable sysfs backlight device under /sys/class/backlight
 #
-# Topics (default prefix: retro-ha):
+# Topics (default prefix: kiosk-retropie):
 #   <prefix>/screen/brightness/set   payload: 0-100 (percent)
 # State topic (retained):
 #   <prefix>/screen/brightness/state payload: 0-100
@@ -20,7 +20,7 @@ if [[ -d "$SCRIPT_DIR/lib" ]]; then
 elif [[ -d "$SCRIPT_DIR/../lib" ]]; then
   LIB_DIR="$SCRIPT_DIR/../lib"
 else
-  echo "retro-ha-screen-brightness-mqtt [error]: unable to locate scripts/lib" >&2
+  echo "kiosk-retropie-screen-brightness-mqtt [error]: unable to locate scripts/lib" >&2
   exit 1
 fi
 
@@ -29,15 +29,15 @@ source "$LIB_DIR/logging.sh"
 # shellcheck source=scripts/lib/common.sh
 source "$LIB_DIR/common.sh"
 
-__retro_ha_screen_brightness_mqtt_poller_pid=""
-__retro_ha_screen_brightness_mqtt_sub_pid=""
+__kiosk_retropie_screen_brightness_mqtt_poller_pid=""
+__kiosk_retropie_screen_brightness_mqtt_sub_pid=""
 
 screen_brightness_mqtt_cleanup() {
-  if [[ -n "${__retro_ha_screen_brightness_mqtt_poller_pid:-}" ]]; then
-    kill "${__retro_ha_screen_brightness_mqtt_poller_pid}" 2> /dev/null || true
+  if [[ -n "${__kiosk_retropie_screen_brightness_mqtt_poller_pid:-}" ]]; then
+    kill "${__kiosk_retropie_screen_brightness_mqtt_poller_pid}" 2> /dev/null || true
   fi
-  if [[ -n "${__retro_ha_screen_brightness_mqtt_sub_pid:-}" ]]; then
-    kill "${__retro_ha_screen_brightness_mqtt_sub_pid}" 2> /dev/null || true
+  if [[ -n "${__kiosk_retropie_screen_brightness_mqtt_sub_pid:-}" ]]; then
+    kill "${__kiosk_retropie_screen_brightness_mqtt_sub_pid}" 2> /dev/null || true
   fi
   exec 3<&- 2> /dev/null || true
 }
@@ -78,9 +78,9 @@ mosq_args() {
 
 backlight_dir() {
   local sysfs_root
-  sysfs_root="$(retro_ha_path /sys/class/backlight)"
+  sysfs_root="$(kiosk_retropie_path /sys/class/backlight)"
 
-  local name="${RETRO_HA_BACKLIGHT_NAME:-}"
+  local name="${KIOSK_RETROPIE_BACKLIGHT_NAME:-}"
   if [[ -n "$name" ]]; then
     cover_path "screen-brightness-mqtt:backlight-name"
     printf '%s\n' "${sysfs_root}/${name}"
@@ -119,7 +119,7 @@ write_brightness_raw() {
   local raw="$2"
 
   local f="$dir/brightness"
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "screen-brightness-mqtt:write-dry-run"
     record_call "write_brightness $raw $f"
     return 0
@@ -185,8 +185,8 @@ publish_brightness_state_once() {
 brightness_state_poller() {
   local prefix="$1"
 
-  local poll_sec="${RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC:-2}"
-  local max_loops="${RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS:-0}"
+  local poll_sec="${KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC:-2}"
+  local max_loops="${KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS:-0}"
   local loops=0
 
   local last=""
@@ -260,7 +260,7 @@ handle_set() {
   dir="$(backlight_dir)"
   if [[ -z "$dir" || ! -d "$dir" ]]; then
     cover_path "screen-brightness-mqtt:no-backlight"
-    die "No backlight device found under $(retro_ha_path /sys/class/backlight)"
+    die "No backlight device found under $(kiosk_retropie_path /sys/class/backlight)"
   fi
 
   local max
@@ -283,11 +283,11 @@ handle_set() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retro-ha-screen-brightness-mqtt"
+  export KIOSK_RETROPIE_LOG_PREFIX="kiosk-retropie-screen-brightness-mqtt"
 
-  if [[ "${RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED:-0}" != "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED:-0}" != "1" ]]; then
     cover_path "screen-brightness-mqtt:disabled"
-    log "RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED!=1; exiting (disabled)."
+    log "KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED!=1; exiting (disabled)."
     exit 0
   fi
 
@@ -296,7 +296,7 @@ main() {
     die "MQTT_HOST is required"
   fi
 
-  local prefix="${RETRO_HA_MQTT_TOPIC_PREFIX:-retro-ha}"
+  local prefix="${KIOSK_RETROPIE_MQTT_TOPIC_PREFIX:-kiosk-retropie}"
   local topic_filter="${prefix}/screen/brightness/set"
 
   local args=()
@@ -309,17 +309,17 @@ main() {
   log "Subscribing to ${topic_filter}"
   cover_path "screen-brightness-mqtt:subscribing"
 
-  # Publish initial state so HA is in sync even if brightness was changed outside MQTT.
+  # Publish initial state so state is in sync even if brightness was changed outside MQTT.
   cover_path "screen-brightness-mqtt:state-initial"
   publish_brightness_state_once "$prefix"
 
-  # Background poller: keep HA in sync with any non-MQTT changes.
+  # Background poller: keep state in sync with any non-MQTT changes.
   brightness_state_poller "$prefix" &
-  __retro_ha_screen_brightness_mqtt_poller_pid=$!
+  __kiosk_retropie_screen_brightness_mqtt_poller_pid=$!
 
   # Start subscriber via process substitution so we can track its PID and clean up.
   exec 3< <(mosquitto_sub "${args[@]}" -v -t "$topic_filter")
-  __retro_ha_screen_brightness_mqtt_sub_pid=$!
+  __kiosk_retropie_screen_brightness_mqtt_sub_pid=$!
 
   trap screen_brightness_mqtt_cleanup EXIT INT TERM
 

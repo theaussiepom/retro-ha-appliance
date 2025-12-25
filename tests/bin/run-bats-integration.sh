@@ -7,7 +7,7 @@ export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Stable repo-root path for tests (avoids depending on $BATS_TEST_DIRNAME-relative paths).
-export RETRO_HA_REPO_ROOT="$ROOT_DIR"
+export KIOSK_RETROPIE_REPO_ROOT="$ROOT_DIR"
 
 "$ROOT_DIR/tests/bin/fetch-bats.sh" >/dev/null
 
@@ -16,11 +16,11 @@ export BATS_LOAD_PATH="$ROOT_DIR/tests:$ROOT_DIR/tests/vendor"
 export BATS_LIB_PATH="$ROOT_DIR/tests/vendor:$ROOT_DIR/tests"
 
 # Stable path-coverage log shared across Bats invocations.
-PATHS_LOG="${RETRO_HA_PATHS_FILE:-$ROOT_DIR/tests/.tmp/retro-ha-paths.log}"
+PATHS_LOG="${KIOSK_RETROPIE_PATHS_FILE:-$ROOT_DIR/tests/.tmp/kiosk-retropie-paths.log}"
 mkdir -p "$(dirname "$PATHS_LOG")"
 rm -f "$PATHS_LOG"
-export RETRO_HA_PATHS_FILE="$PATHS_LOG"
-export RETRO_HA_PATH_COVERAGE=1
+export KIOSK_RETROPIE_PATHS_FILE="$PATHS_LOG"
+export KIOSK_RETROPIE_PATH_COVERAGE=1
 
 shopt -s nullglob
 

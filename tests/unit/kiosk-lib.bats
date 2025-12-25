@@ -2,25 +2,25 @@
 
 # shellcheck disable=SC1090,SC1091
 
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-support/load"
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-assert/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-support/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-assert/load"
 
 setup() {
-  export RETRO_HA_ROOT
-  RETRO_HA_ROOT="$(mktemp -d)"
+  export KIOSK_RETROPIE_ROOT
+  KIOSK_RETROPIE_ROOT="$(mktemp -d)"
 
   # Source script under test (guarded main).
-  source "${RETRO_HA_REPO_ROOT}/scripts/mode/ha-kiosk.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/mode/kiosk.sh"
 }
 
 test_teardown() {
-  rm -rf "${RETRO_HA_ROOT}" || true
+  rm -rf "${KIOSK_RETROPIE_ROOT}" || true
 }
 
 @test "chromium_bin prefers chromium-browser when present" {
   local bindir
   bindir="$(mktemp -d)"
-  ln -s "${RETRO_HA_REPO_ROOT}/tests/stubs/chromium-browser" "$bindir/chromium-browser"
+  ln -s "${KIOSK_RETROPIE_REPO_ROOT}/tests/stubs/chromium-browser" "$bindir/chromium-browser"
 
   local old_path="$PATH"
   PATH="$bindir:$old_path"
@@ -37,7 +37,7 @@ test_teardown() {
 @test "chromium_bin returns chromium when chromium-browser absent" {
   local bindir
   bindir="$(mktemp -d)"
-  ln -s "${RETRO_HA_REPO_ROOT}/tests/stubs/chromium" "$bindir/chromium"
+  ln -s "${KIOSK_RETROPIE_REPO_ROOT}/tests/stubs/chromium" "$bindir/chromium"
 
   local old_path="$PATH"
   # Ensure host-installed chromium-browser can't win resolution.

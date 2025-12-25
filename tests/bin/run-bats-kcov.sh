@@ -7,7 +7,7 @@ export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 
 # Stable repo-root path for tests (avoids depending on $BATS_TEST_DIRNAME-relative paths).
-export RETRO_HA_REPO_ROOT="$ROOT_DIR"
+export KIOSK_RETROPIE_REPO_ROOT="$ROOT_DIR"
 
 "$ROOT_DIR/tests/bin/fetch-bats.sh" >/dev/null
 

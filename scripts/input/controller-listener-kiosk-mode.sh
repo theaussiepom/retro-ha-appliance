@@ -11,14 +11,14 @@ import time
 
 
 def log(msg: str) -> None:
-	print(f"controller_listener_ha_mode: {msg}", flush=True)
+	print(f"controller_listener_kiosk_mode: {msg}", flush=True)
 
 
 def cover_path(path_id: str) -> None:
-	if os.environ.get("RETRO_HA_PATH_COVERAGE", "0") != "1":
+	if os.environ.get("KIOSK_RETROPIE_PATH_COVERAGE", "0") != "1":
 		return
 	# Prefer suite-wide append file when present.
-	path_file = os.environ.get("RETRO_HA_CALLS_FILE_APPEND") or os.environ.get("RETRO_HA_CALLS_FILE")
+	path_file = os.environ.get("KIOSK_RETROPIE_CALLS_FILE_APPEND") or os.environ.get("KIOSK_RETROPIE_CALLS_FILE")
 	if not path_file:
 		return
 	try:
@@ -41,7 +41,7 @@ def is_active(unit: str) -> bool:
 
 
 def devices() -> list[str]:
-	by_id_dir = os.environ.get("RETRO_HA_INPUT_BY_ID_DIR", "/dev/input/by-id")
+	by_id_dir = os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR", "/dev/input/by-id")
 	by_id = glob.glob(os.path.join(by_id_dir, "*event-joystick"))
 	if not by_id:
 		by_id = glob.glob(os.path.join(by_id_dir, "*joystick"))
@@ -60,25 +60,18 @@ def devices() -> list[str]:
 
 def main() -> int:
 	# Configurable controller codes.
-	# Backwards-compatible fallbacks:
-	# - RETRO_HA_START_BUTTON_CODE (legacy)
-	enter_code = int(
-		os.environ.get(
-			"RETRO_HA_RETRO_ENTER_TRIGGER_CODE",
-			os.environ.get("RETRO_HA_START_BUTTON_CODE", "315"),
-		)
-	)
-	debounce_sec = float(os.environ.get("RETRO_HA_START_DEBOUNCE_SEC", "1.0"))
-	max_triggers = int(os.environ.get("RETRO_HA_MAX_TRIGGERS", "0"))
-	max_loops = int(os.environ.get("RETRO_HA_MAX_LOOPS", "0"))
+	enter_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE", "315"))
+	debounce_sec = float(os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC", "1.0"))
+	max_triggers = int(os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS", "0"))
+	max_loops = int(os.environ.get("KIOSK_RETROPIE_MAX_LOOPS", "0"))
 	last_fire = 0.0
 	triggers = 0
 	loops = 0
 
-	# Safety: only run behavior if HA kiosk is up.
-	if not is_active("ha-kiosk.service"):
-		cover_path("controller-ha:ha-not-active")
-		log("ha-kiosk.service not active; exiting")
+	# Safety: only run behavior if kiosk is up.
+	if not is_active("kiosk.service"):
+		cover_path("controller-kiosk:kiosk-not-active")
+		log("kiosk.service not active; exiting")
 		return 0
 
 	sel = selectors.DefaultSelector()
@@ -90,16 +83,16 @@ def main() -> int:
 		try:
 			fd = os.open(dev, os.O_RDONLY | os.O_NONBLOCK)
 		except OSError as e:
-			cover_path("controller-ha:device-open-failed")
+			cover_path("controller-kiosk:device-open-failed")
 			log(f"Unable to open {dev}: {e}")
 			continue
 		sel.register(fd, selectors.EVENT_READ, data=dev)
-		cover_path("controller-ha:listening")
+		cover_path("controller-kiosk:listening")
 		log(f"Listening on {dev}")
 		opened = True
 
 	if not opened:
-		cover_path("controller-ha:no-devices")
+		cover_path("controller-kiosk:no-devices")
 		log("No controller devices found")
 		return 1
 
@@ -108,9 +101,9 @@ def main() -> int:
 		if max_loops and loops > max_loops:
 			return 0
 
-		# If HA mode ended, stop this listener.
-		if not is_active("ha-kiosk.service"):
-			log("ha-kiosk.service stopped; exiting")
+		# If kiosk mode ended, stop this listener.
+		if not is_active("kiosk.service"):
+			log("kiosk.service stopped; exiting")
 			return 0
 
 		for key, _mask in sel.select(timeout=1.0):
@@ -132,7 +125,7 @@ def main() -> int:
 						continue
 
 					log("Start pressed -> switching to RetroPie mode")
-					cover_path("controller-ha:trigger-start-retro")
+					cover_path("controller-kiosk:trigger-start-retro")
 					systemctl("start", "retro-mode.service")
 					triggers += 1
 					if max_triggers and triggers >= max_triggers:

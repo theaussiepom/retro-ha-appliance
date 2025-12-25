@@ -23,11 +23,11 @@ usage() {
 Usage:
   ledctl.sh (act|pwr|all) (on|off)
 
-Environment overrides (typically from /etc/retro-ha/config.env):
-  RETRO_HA_ACT_LED              LED sysfs name for "ACT" (default: led0)
-  RETRO_HA_PWR_LED              LED sysfs name for "PWR" (default: led1)
-  RETRO_HA_ACT_LED_TRIGGER_ON   Trigger to restore when turning ACT on (default: mmc0)
-  RETRO_HA_PWR_LED_TRIGGER_ON   Trigger to restore when turning PWR on (default: default-on)
+Environment overrides (typically from /etc/kiosk-retropie/config.env):
+  KIOSK_RETROPIE_ACT_LED              LED sysfs name for "ACT" (default: led0)
+  KIOSK_RETROPIE_PWR_LED              LED sysfs name for "PWR" (default: led1)
+  KIOSK_RETROPIE_ACT_LED_TRIGGER_ON   Trigger to restore when turning ACT on (default: mmc0)
+  KIOSK_RETROPIE_PWR_LED_TRIGGER_ON   Trigger to restore when turning PWR on (default: default-on)
 
 Notes:
   - "off" forces trigger=none and brightness=0.
@@ -37,7 +37,7 @@ EOF
 
 led_sysfs_dir() {
   local led_name="$1"
-  retro_ha_path "/sys/class/leds/${led_name}"
+  kiosk_retropie_path "/sys/class/leds/${led_name}"
 }
 
 set_led_off() {
@@ -94,7 +94,7 @@ set_led_on() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="ledctl"
+  export KIOSK_RETROPIE_LOG_PREFIX="ledctl"
 
   if [[ $# -ne 2 ]]; then
     cover_path "ledctl:usage-argc"
@@ -105,11 +105,11 @@ main() {
   local which="$1"
   local state="$2"
 
-  local act_led="${RETRO_HA_ACT_LED:-led0}"
-  local pwr_led="${RETRO_HA_PWR_LED:-led1}"
+  local act_led="${KIOSK_RETROPIE_ACT_LED:-led0}"
+  local pwr_led="${KIOSK_RETROPIE_PWR_LED:-led1}"
 
-  local act_on_trigger="${RETRO_HA_ACT_LED_TRIGGER_ON:-mmc0}"
-  local pwr_on_trigger="${RETRO_HA_PWR_LED_TRIGGER_ON:-default-on}"
+  local act_on_trigger="${KIOSK_RETROPIE_ACT_LED_TRIGGER_ON:-mmc0}"
+  local pwr_on_trigger="${KIOSK_RETROPIE_PWR_LED_TRIGGER_ON:-default-on}"
 
   case "$which" in
     act | pwr | all) : ;;

@@ -1,5 +1,5 @@
 {
-  "name": "retro-ha-appliance",
+  "name": "kiosk-retropie",
   "build": {
     "dockerfile": "Dockerfile"
   },

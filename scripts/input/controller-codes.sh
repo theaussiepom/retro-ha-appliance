@@ -4,13 +4,13 @@ set -euo pipefail
 # Print controller button codes from Linux evdev.
 #
 # Usage:
-#   sudo /usr/local/bin/retro-ha-controller-codes.sh
+#   sudo /usr/local/bin/kiosk-retropie-controller-codes.sh
 #   # or from repo:
 #   sudo ./scripts/input/controller-codes.sh
 #
 # It listens on /dev/input/by-id/*event-joystick by default.
 # Override directory for testing:
-#   RETRO_HA_INPUT_BY_ID_DIR=/some/dir sudo ./scripts/input/controller-codes.sh
+#   KIOSK_RETROPIE_INPUT_BY_ID_DIR=/some/dir sudo ./scripts/input/controller-codes.sh
 
 exec python3 - << 'PY'
 import glob
@@ -25,7 +25,7 @@ def log(msg: str) -> None:
 
 
 def devices() -> list[str]:
-    by_id_dir = os.environ.get("RETRO_HA_INPUT_BY_ID_DIR", "/dev/input/by-id")
+    by_id_dir = os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR", "/dev/input/by-id")
     by_id = glob.glob(os.path.join(by_id_dir, "*event-joystick"))
     if not by_id:
         by_id = glob.glob(os.path.join(by_id_dir, "*joystick"))
