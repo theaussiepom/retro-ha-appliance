@@ -41,7 +41,7 @@ def is_active(unit: str) -> bool:
 
 
 def devices() -> list[str]:
-	by_id_dir = os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR", "/dev/input/by-id")
+	by_id_dir = os.environ.get("RETROPIE_INPUT_BY_ID_DIR") or os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR") or "/dev/input/by-id"
 	by_id = glob.glob(os.path.join(by_id_dir, "*event-joystick"))
 	if not by_id:
 		by_id = glob.glob(os.path.join(by_id_dir, "*joystick"))
@@ -60,10 +60,10 @@ def devices() -> list[str]:
 
 def main() -> int:
 	# Configurable controller codes.
-	enter_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE", "315"))
-	debounce_sec = float(os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC", "1.0"))
-	max_triggers = int(os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS", "0"))
-	max_loops = int(os.environ.get("KIOSK_RETROPIE_MAX_LOOPS", "0"))
+	enter_code = int(os.environ.get("RETROPIE_ENTER_TRIGGER_CODE") or os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE") or "315")
+	debounce_sec = float(os.environ.get("RETROPIE_START_DEBOUNCE_SEC") or os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC") or "1.0")
+	max_triggers = int(os.environ.get("RETROPIE_MAX_TRIGGERS") or os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS") or "0")
+	max_loops = int(os.environ.get("RETROPIE_MAX_LOOPS") or os.environ.get("KIOSK_RETROPIE_MAX_LOOPS") or "0")
 	last_fire = 0.0
 	triggers = 0
 	loops = 0

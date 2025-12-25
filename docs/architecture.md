@@ -139,8 +139,8 @@ If you want to re-run install without reflashing, delete the marker file and res
 
 Both modes start the X server (Xorg) explicitly via `xinit` and run on fixed VTs (virtual terminals):
 
-- Kiosk: VT7 (`KIOSK_RETROPIE_X_VT`, default `7`)
-- Retro mode: VT8 (`KIOSK_RETROPIE_RETRO_X_VT`, default `8`)
+- Kiosk: VT7 (`KIOSK_X_VT`, default `7`)
+- Retro mode: VT8 (`RETROPIE_X_VT`, default `8`)
 
 systemd enforces exclusivity:
 
@@ -192,9 +192,9 @@ They look under `/dev/input/by-id/` first because those names tend to stay stabl
 
 Controller codes are configurable to support different hardware:
 
-- Enter Retro (kiosk -> Retro): `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` (default `315`)
-- Exit Retro (Retro -> kiosk): press `KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE` (default `304`), then press
-  `KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE` (default `315`) within `KIOSK_RETROPIE_COMBO_WINDOW_SEC` (default `0.75`).
+- Enter Retro (kiosk -> Retro): `RETROPIE_ENTER_TRIGGER_CODE` (default `315`)
+- Exit Retro (Retro -> kiosk): press `RETROPIE_EXIT_SECOND_CODE` (default `304`), then press
+  `RETROPIE_EXIT_TRIGGER_CODE` (default `315`) within `RETROPIE_COMBO_WINDOW_SEC` (default `0.75`).
 
 To discover your controller’s codes on the Pi:
 
@@ -225,8 +225,8 @@ The storage design separates gameplay data from network availability.
 ### Saves and states
 
 - Saves and savestates are always local:
-  - `KIOSK_RETROPIE_SAVES_DIR` (default: `/var/lib/kiosk-retropie/retropie/saves`)
-  - `KIOSK_RETROPIE_STATES_DIR` (default: `/var/lib/kiosk-retropie/retropie/states`)
+  - `RETROPIE_SAVES_DIR` (default: `/var/lib/kiosk-retropie/retropie/saves`)
+  - `RETROPIE_STATES_DIR` (default: `/var/lib/kiosk-retropie/retropie/states`)
 - Optional backup to NFS is implemented as a periodic rsync job and is disabled by default.
 - Backup explicitly skips while `retro-mode.service` is active.
 

@@ -65,6 +65,7 @@ install_packages() {
     ca-certificates \
     curl \
     git \
+    mosquitto-clients \
     nfs-common \
     python3 \
     rsync \
@@ -288,7 +289,7 @@ main() {
   log "Installing files"
   install_files
 
-  if [[ "${KIOSK_RETROPIE_INSTALL_RETROPIE:-0}" == "1" ]]; then
+  if [[ "${RETROPIE_INSTALL:-${KIOSK_RETROPIE_INSTALL_RETROPIE:-0}}" == "1" ]]; then
     cover_path "install:optional-retropie-enabled"
     log "Installing RetroPie (optional)"
     run_cmd "${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}/install-retropie.sh" || log "RetroPie install failed (continuing)"

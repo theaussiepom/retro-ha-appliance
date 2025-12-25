@@ -19,7 +19,7 @@ teardown() {
 }
 
 @test "led-mqtt exits 0 when disabled" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=0
+	export KIOSK_LED_MQTT_ENABLED=0
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/led-mqtt.sh"
 	assert_success
 	# Calls may exist due to path coverage markers; ensure we did not subscribe.
@@ -29,7 +29,7 @@ teardown() {
 }
 
 @test "led-mqtt fails if enabled but MQTT_HOST missing" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	unset MQTT_HOST
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/led-mqtt.sh"
 	assert_failure
@@ -37,7 +37,7 @@ teardown() {
 }
 
 @test "led-mqtt records subscribe loop under dry-run" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
@@ -48,7 +48,7 @@ teardown() {
 }
 
 @test "led-mqtt publishes state via mosquitto_pub under dry-run" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 
 	# Force the script to call publish_state path by invoking internal function
@@ -62,7 +62,7 @@ teardown() {
 }
 
 @test "led-mqtt mosq_args includes auth + tls options" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export MQTT_PORT=1884
 	export MQTT_USERNAME="u"
@@ -88,7 +88,7 @@ teardown() {
 }
 
 @test "led-mqtt handle_set ignores unknown payload" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 
 	# Provide a fake, executable ledctl.
@@ -96,7 +96,7 @@ teardown() {
 	echo '#!/usr/bin/env bash' >"$ledctl"
 	echo 'exit 0' >>"$ledctl"
 	chmod +x "$ledctl"
-	export KIOSK_RETROPIE_LEDCTL_PATH="$ledctl"
+	export KIOSK_LEDCTL_PATH="$ledctl"
 
 	make_isolated_path_with_stubs dirname
 	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/led-mqtt.sh"
@@ -110,7 +110,7 @@ teardown() {
 		set -euo pipefail
 		source "$1"
 		export KIOSK_RETROPIE_DRY_RUN=1
-		export KIOSK_RETROPIE_LEDCTL_PATH="$2"
+		export KIOSK_LEDCTL_PATH="$2"
 		handle_set act on kiosk-retropie
 	' bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/led-mqtt.sh" "$TEST_ROOT/missing-ledctl.sh"
 	assert_failure
@@ -118,7 +118,7 @@ teardown() {
 }
 
 @test "led-mqtt processes a single set message and publishes state (including unknown target)" {
-	export KIOSK_RETROPIE_LED_MQTT_ENABLED=1
+	export KIOSK_LED_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
 
@@ -141,7 +141,7 @@ EOF
 	echo '#!/usr/bin/env bash' >"$ledctl"
 	echo 'exit 0' >>"$ledctl"
 	chmod +x "$ledctl"
-	export KIOSK_RETROPIE_LEDCTL_PATH="$ledctl"
+	export KIOSK_LEDCTL_PATH="$ledctl"
 
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/led-mqtt.sh"
 	assert_success
@@ -154,8 +154,8 @@ EOF
 @test "led-mqtt poller publishes state when LED brightness changes outside MQTT" {
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
-	export KIOSK_RETROPIE_LED_MQTT_POLL_SEC=0.05
-	export KIOSK_RETROPIE_LED_MQTT_MAX_LOOPS=3
+	export KIOSK_LED_MQTT_POLL_SEC=0.05
+	export KIOSK_LED_MQTT_MAX_LOOPS=3
 
 	# Create a fake sysfs LED state under KIOSK_RETROPIE_ROOT.
 	mkdir -p "$TEST_ROOT/sys/class/leds/led0" "$TEST_ROOT/sys/class/leds/led1"
@@ -221,8 +221,8 @@ EOF
 @test "led-mqtt poller covers max-loops exit" {
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
-	export KIOSK_RETROPIE_LED_MQTT_POLL_SEC=0
-	export KIOSK_RETROPIE_LED_MQTT_MAX_LOOPS=1
+	export KIOSK_LED_MQTT_POLL_SEC=0
+	export KIOSK_LED_MQTT_MAX_LOOPS=1
 
 	# Fake sysfs so state reads succeed.
 	mkdir -p "$TEST_ROOT/sys/class/leds/led0" "$TEST_ROOT/sys/class/leds/led1"

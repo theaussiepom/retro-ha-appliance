@@ -22,13 +22,18 @@ main() {
   export KIOSK_RETROPIE_LOG_PREFIX="mount-nfs"
 
   local server="${NFS_SERVER:-}"
-  local export_path="${NFS_PATH:-}"
-  local mount_point="${KIOSK_RETROPIE_NFS_MOUNT_POINT:-$(kiosk_retropie_path /mnt/kiosk-retropie-roms)}"
-  local mount_opts="${KIOSK_RETROPIE_NFS_MOUNT_OPTIONS:-ro}"
+  local export_path="${NFS_ROMS_PATH:-${NFS_PATH:-}}"
+  local mount_point="${RETROPIE_NFS_MOUNT_POINT:-${KIOSK_RETROPIE_NFS_MOUNT_POINT:-$(kiosk_retropie_path /mnt/kiosk-retropie-roms)}}"
+  local mount_opts="${RETROPIE_NFS_MOUNT_OPTIONS:-${KIOSK_RETROPIE_NFS_MOUNT_OPTIONS:-ro}}"
+
+  if [[ -n "${NFS_PATH:-}" && -z "${NFS_ROMS_PATH:-}" ]]; then
+    cover_path "mount-nfs:legacy-nfs-path"
+    log "Using legacy NFS_PATH; prefer NFS_ROMS_PATH"
+  fi
 
   if [[ -z "$server" || -z "$export_path" ]]; then
     cover_path "mount-nfs:not-configured"
-    log "NFS not configured (set NFS_SERVER and NFS_PATH); skipping"
+    log "NFS not configured (set NFS_SERVER and NFS_ROMS_PATH); skipping"
     exit 0
   fi
 

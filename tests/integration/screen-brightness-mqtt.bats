@@ -47,7 +47,7 @@ make_fake_backlight() {
 }
 
 @test "screen-brightness-mqtt exits 0 when disabled" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=0
+	export KIOSK_SCREEN_BRIGHTNESS_MQTT_ENABLED=0
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
 	assert_success
 	if [[ -f "$TEST_ROOT/calls.log" ]]; then
@@ -56,7 +56,7 @@ make_fake_backlight() {
 }
 
 @test "screen-brightness-mqtt fails if enabled but MQTT_HOST missing" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export KIOSK_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	unset MQTT_HOST
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
 	assert_failure
@@ -64,7 +64,7 @@ make_fake_backlight() {
 }
 
 @test "screen-brightness-mqtt records subscribe under dry-run" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export KIOSK_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
 
@@ -76,13 +76,13 @@ make_fake_backlight() {
 }
 
 @test "screen-brightness-mqtt processes a set message, writes brightness, and publishes retained state" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
+	export KIOSK_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=0
 
 	# Create a fake sysfs backlight under KIOSK_RETROPIE_ROOT.
 	make_fake_backlight "test" "200" "0"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
+	export KIOSK_BACKLIGHT_NAME="test"
 
 	# Provide stubs and override mosquitto_sub to emit one set message.
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub

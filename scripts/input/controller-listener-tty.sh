@@ -42,7 +42,8 @@ def is_active(unit: str) -> bool:
 def devices() -> list[str]:
 	# Test injection: allow explicit device list (paths) to avoid relying on real /dev/input.
 	# Format: colon/comma/space-separated list.
-	explicit = os.environ.get("KIOSK_RETROPIE_INPUT_DEVICES", "").strip()
+	explicit = os.environ.get("RETROPIE_INPUT_DEVICES") or os.environ.get("KIOSK_RETROPIE_INPUT_DEVICES", "")
+	explicit = explicit.strip()
 	if explicit:
 		paths: list[str] = []
 		for token in [t for t in explicit.replace(",", ":").split(":") if t.strip()]:
@@ -51,7 +52,7 @@ def devices() -> list[str]:
 		return paths
 
 	# Prefer event devices for consistent key codes.
-	by_id_dir = os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR", "/dev/input/by-id")
+	by_id_dir = os.environ.get("RETROPIE_INPUT_BY_ID_DIR") or os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR") or "/dev/input/by-id"
 	by_id = glob.glob(os.path.join(by_id_dir, "*event-joystick"))
 	if not by_id:
 		by_id = glob.glob(os.path.join(by_id_dir, "*joystick"))
@@ -72,13 +73,13 @@ def devices() -> list[str]:
 
 def main() -> int:
 	# Configurable controller codes.
-	enter_trigger_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE", "315"))
-	exit_trigger_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE", "315"))
-	exit_second_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE", "304"))
-	combo_window_sec = float(os.environ.get("KIOSK_RETROPIE_COMBO_WINDOW_SEC", "0.75"))
-	debounce_sec = float(os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC", "1.0"))
-	max_triggers = int(os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS", "0"))
-	max_loops = int(os.environ.get("KIOSK_RETROPIE_MAX_LOOPS", "0"))
+	enter_trigger_code = int(os.environ.get("RETROPIE_ENTER_TRIGGER_CODE") or os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE") or "315")
+	exit_trigger_code = int(os.environ.get("RETROPIE_EXIT_TRIGGER_CODE") or os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE") or "315")
+	exit_second_code = int(os.environ.get("RETROPIE_EXIT_SECOND_CODE") or os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE") or "304")
+	combo_window_sec = float(os.environ.get("RETROPIE_COMBO_WINDOW_SEC") or os.environ.get("KIOSK_RETROPIE_COMBO_WINDOW_SEC") or "0.75")
+	debounce_sec = float(os.environ.get("RETROPIE_START_DEBOUNCE_SEC") or os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC") or "1.0")
+	max_triggers = int(os.environ.get("RETROPIE_MAX_TRIGGERS") or os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS") or "0")
+	max_loops = int(os.environ.get("RETROPIE_MAX_LOOPS") or os.environ.get("KIOSK_RETROPIE_MAX_LOOPS") or "0")
 	last_fire = 0.0
 	last_start = 0.0
 	last_a = 0.0

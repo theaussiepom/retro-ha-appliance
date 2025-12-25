@@ -12,10 +12,10 @@ setup() {
 	setup_test_root
 
 	# Deterministic behavior: no debounce and exit after first trigger.
-	export KIOSK_RETROPIE_START_DEBOUNCE_SEC=0
-	export KIOSK_RETROPIE_MAX_TRIGGERS=1
+	export RETROPIE_START_DEBOUNCE_SEC=0
+	export RETROPIE_MAX_TRIGGERS=1
 	# Safety: avoid infinite loops if something goes wrong.
-	export KIOSK_RETROPIE_MAX_LOOPS=200
+	export RETROPIE_MAX_LOOPS=200
 
 	# Default to "not active" for services unless a test overrides.
 	export SYSTEMCTL_ACTIVE_KIOSK=1
@@ -46,7 +46,7 @@ make_fake_controller_fifo() {
 	# Name must match *event-joystick glob in the production scripts.
 	ln -s "$fifo" "$by_id_dir/fake-event-joystick"
 
-	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
+	export RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 	export FAKE_CONTROLLER_FIFO="$fifo"
 }
 
@@ -265,7 +265,7 @@ assert_calls_contains() {
 
 	local by_id_dir="$TEST_ROOT/dev/input/by-id"
 	mkdir -p "$by_id_dir"
-	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
+	export RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-kiosk-mode.sh"
 	assert_failure
@@ -330,7 +330,7 @@ assert_calls_contains() {
 @test "TTY listener: exits 1 when no devices found" {
 	local by_id_dir="$TEST_ROOT/dev/input/by-id"
 	mkdir -p "$by_id_dir"
-	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
+	export RETROPIE_INPUT_BY_ID_DIR="$by_id_dir"
 
 	# Ensure it doesn't short-circuit on retro already active.
 	export SYSTEMCTL_ACTIVE_RETRO=1

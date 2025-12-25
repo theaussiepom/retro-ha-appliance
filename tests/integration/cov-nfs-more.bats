@@ -18,7 +18,7 @@ teardown() {
 }
 
 @test "mount-nfs records not-configured path" {
-  unset NFS_SERVER NFS_PATH
+  unset NFS_SERVER NFS_ROMS_PATH
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:not-configured"
@@ -26,7 +26,7 @@ teardown() {
 
 @test "mount-nfs records already-mounted path" {
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-roms\n"
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
   assert_success
@@ -36,7 +36,7 @@ teardown() {
 @test "mount-nfs records mount-failed path (fail-open)" {
   export KIOSK_RETROPIE_DRY_RUN=0
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNT_EXIT_CODE=32
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
   assert_success
@@ -47,7 +47,7 @@ teardown() {
 @test "mount-nfs records mount-success path" {
   export KIOSK_RETROPIE_DRY_RUN=0
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNT_EXIT_CODE=0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
   assert_success
@@ -63,7 +63,7 @@ teardown() {
 
 @test "mount-nfs-backup not-configured path" {
   export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
-  unset KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH NFS_SERVER NFS_PATH
+  unset KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH NFS_SERVER NFS_ROMS_PATH NFS_SAVE_BACKUP_PATH
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:not-configured"
@@ -72,7 +72,7 @@ teardown() {
 @test "mount-nfs-backup already-mounted path" {
   export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_SAVE_BACKUP_PATH=/export
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-backup\n"
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
@@ -83,7 +83,7 @@ teardown() {
   export KIOSK_RETROPIE_DRY_RUN=0
   export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_SAVE_BACKUP_PATH=/export
   export MOUNT_EXIT_CODE=32
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
@@ -95,7 +95,7 @@ teardown() {
   export KIOSK_RETROPIE_DRY_RUN=0
   export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_SAVE_BACKUP_PATH=/export
   export MOUNT_EXIT_CODE=0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
@@ -104,7 +104,7 @@ teardown() {
 
 @test "sync-roms skips when rsync missing" {
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-roms\n"
   make_isolated_path_with_stubs dirname mountpoint mount
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
@@ -114,7 +114,7 @@ teardown() {
 
 @test "sync-roms skips when not mounted" {
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   unset MOUNTPOINT_PATHS
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
   assert_success
@@ -123,7 +123,7 @@ teardown() {
 
 @test "sync-roms with allowlist + exclude + delete" {
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-roms\n"
 
   # Fake NFS tree under KIOSK_RETROPIE_ROOT.
@@ -141,20 +141,25 @@ teardown() {
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:chown"
 }
 
-@test "sync-roms records with-subdir + src-missing" {
-  export NFS_SERVER=server
-  export NFS_PATH=/export
-  export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-roms\n"
+@test "sync-roms records legacy-subdir-ignored + src-missing" {
+  # Avoid mount-nfs creating the mountpoint directory.
+  export NFS_SERVER=
+  export NFS_ROMS_PATH=
+
+  missing_mp="$TEST_ROOT/mnt/kiosk-retropie-roms-missing"
+  export KIOSK_RETROPIE_NFS_MOUNT_POINT="$missing_mp"
+  export MOUNTPOINT_PATHS="$missing_mp\n"
+
   export KIOSK_RETROPIE_NFS_ROMS_SUBDIR=subdir
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
   assert_success
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:with-subdir"
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:legacy-subdir-ignored"
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:src-missing"
 }
 
 @test "sync-roms records discover + missing-system" {
   export NFS_SERVER=server
-  export NFS_PATH=/export
+  export NFS_ROMS_PATH=/export
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-roms\n"
 
   mkdir -p "$TEST_ROOT/mnt/kiosk-retropie-roms/nes"

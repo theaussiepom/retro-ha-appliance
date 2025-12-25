@@ -42,14 +42,14 @@ teardown() {
 }
 
 @test "ledctl act on supported trigger path" {
-  export KIOSK_RETROPIE_ACT_LED_TRIGGER_ON=mmc0
+  export KIOSK_ACT_LED_TRIGGER_ON=mmc0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" act on
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH ledctl:act-on-supported"
 }
 
 @test "ledctl act on unsupported trigger path" {
-  export KIOSK_RETROPIE_ACT_LED_TRIGGER_ON=not-a-trigger
+  export KIOSK_ACT_LED_TRIGGER_ON=not-a-trigger
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" act on
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH ledctl:act-on-unsupported"
@@ -63,14 +63,14 @@ teardown() {
 
 @test "ledctl pwr on supported trigger path" {
   # Default trigger file includes 'default-on'
-  export KIOSK_RETROPIE_PWR_LED_TRIGGER_ON=default-on
+  export KIOSK_PWR_LED_TRIGGER_ON=default-on
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" pwr on
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH ledctl:pwr-on-supported"
 }
 
 @test "ledctl pwr on unsupported trigger path" {
-  export KIOSK_RETROPIE_PWR_LED_TRIGGER_ON=not-a-trigger
+  export KIOSK_PWR_LED_TRIGGER_ON=not-a-trigger
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/leds/ledctl.sh" pwr on
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH ledctl:pwr-on-unsupported"

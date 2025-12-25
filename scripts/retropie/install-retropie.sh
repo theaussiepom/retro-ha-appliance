@@ -54,8 +54,8 @@ main() {
     die "Unable to resolve home directory for $user"
   fi
 
-  local setup_dir="${KIOSK_RETROPIE_RETROPIE_SETUP_DIR:-$home_dir/RetroPie-Setup}"
-  local setup_repo="${KIOSK_RETROPIE_RETROPIE_SETUP_REPO:-https://github.com/RetroPie/RetroPie-Setup.git}"
+  local setup_dir="${RETROPIE_SETUP_DIR:-${KIOSK_RETROPIE_RETROPIE_SETUP_DIR:-$home_dir/RetroPie-Setup}}"
+  local setup_repo="${RETROPIE_SETUP_REPO:-${KIOSK_RETROPIE_RETROPIE_SETUP_REPO:-https://github.com/RetroPie/RetroPie-Setup.git}}"
 
   if [[ ! -d "$setup_dir/.git" ]]; then
     cover_path "retropie-install:clone"

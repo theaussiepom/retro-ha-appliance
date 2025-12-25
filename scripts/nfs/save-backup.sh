@@ -23,7 +23,7 @@ source "$LIB_DIR/backup.sh"
 main() {
   export KIOSK_RETROPIE_LOG_PREFIX="save-backup"
 
-  local enabled="${KIOSK_RETROPIE_SAVE_BACKUP_ENABLED:-0}"
+  local enabled="${RETROPIE_SAVE_BACKUP_ENABLED:-${KIOSK_RETROPIE_SAVE_BACKUP_ENABLED:-0}}"
   if [[ "$enabled" != "1" ]]; then
     cover_path "save-backup:disabled"
     exit 0
@@ -37,11 +37,11 @@ main() {
   fi
 
   local user="retropi"
-  local saves_dir="${KIOSK_RETROPIE_SAVES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/saves)}"
-  local states_dir="${KIOSK_RETROPIE_STATES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/states)}"
-  local backup_root="${KIOSK_RETROPIE_SAVE_BACKUP_DIR:-$(kiosk_retropie_path /mnt/kiosk-retropie-backup)}"
-  local backup_subdir="${KIOSK_RETROPIE_SAVE_BACKUP_SUBDIR:-kiosk-retropie-saves}"
-  local delete="${KIOSK_RETROPIE_SAVE_BACKUP_DELETE:-0}"
+  local saves_dir="${RETROPIE_SAVES_DIR:-${KIOSK_RETROPIE_SAVES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/saves)}}"
+  local states_dir="${RETROPIE_STATES_DIR:-${KIOSK_RETROPIE_STATES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/states)}}"
+  local backup_root="${RETROPIE_SAVE_BACKUP_DIR:-${KIOSK_RETROPIE_SAVE_BACKUP_DIR:-$(kiosk_retropie_path /mnt/kiosk-retropie-backup)}}"
+  local backup_subdir="${RETROPIE_SAVE_BACKUP_SUBDIR:-${KIOSK_RETROPIE_SAVE_BACKUP_SUBDIR:-kiosk-retropie-saves}}"
+  local delete="${RETROPIE_SAVE_BACKUP_DELETE:-${KIOSK_RETROPIE_SAVE_BACKUP_DELETE:-0}}"
 
   # Mount backup destination (rw) if configured.
   run_cmd "$SCRIPT_DIR/mount-nfs-backup.sh" || true
