@@ -4,9 +4,9 @@ Short definitions for terms used across the docs.
 
 ## Appliance concepts
 
-- **Mode**: One of the mutually-exclusive runtime states on the Pi: HA kiosk mode or Retro mode.
+- **Mode**: One of the mutually-exclusive runtime states on the Pi: kiosk mode or Retro mode.
 - **Fail-open**: If kiosk mode is unhealthy/unavailable, the system should still make Retro mode reachable.
-- **Repo pinning**: Installing from a specific branch/tag/commit via `RETRO_HA_REPO_URL` + `RETRO_HA_REPO_REF`.
+- **Repo pinning**: Installing from a specific branch/tag/commit via `KIOSK_RETROPIE_REPO_URL` + `KIOSK_RETROPIE_REPO_REF`.
 
 ## Linux + systemd
 
@@ -33,14 +33,14 @@ Short definitions for terms used across the docs.
 
 ## MQTT
 
-- **MQTT**: A lightweight pub/sub messaging protocol commonly used by Home Assistant and IoT devices.
-- **Topic**: The string namespace messages are published to (e.g. `retro-ha/led/act/set`).
-- **Topic prefix**: A shared prefix (`RETRO_HA_MQTT_TOPIC_PREFIX`, default `retro-ha`) so related topics group
+- **MQTT**: A lightweight pub/sub messaging protocol commonly used by dashboards/controllers and IoT devices.
+- **Topic**: The string namespace messages are published to (e.g. `kiosk-retropie/led/act/set`).
+- **Topic prefix**: A shared prefix (`KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`, default `kiosk-retropie`) so related topics group
   together.
 - **Retained message**: A message stored by the broker and delivered immediately to new subscribers (useful for
   “current state”).
 - **State topic**: A topic where the appliance publishes current state for UIs/automation.
-- **Set/command topic**: A topic where Home Assistant (or another client) publishes desired state.
+- **Set/command topic**: A topic where a dashboard/controller (or another client) publishes desired state.
 
 ## Repo tooling
 

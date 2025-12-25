@@ -5,8 +5,8 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/etc/retro-ha/config.env
-ExecStart=/usr/local/lib/retro-ha/sync-roms.sh
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/sync-roms.sh
 
 [Install]
 WantedBy=multi-user.target

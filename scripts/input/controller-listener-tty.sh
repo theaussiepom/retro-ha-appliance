@@ -15,9 +15,9 @@ def log(msg: str) -> None:
 
 
 def cover_path(path_id: str) -> None:
-	if os.environ.get("RETRO_HA_PATH_COVERAGE", "0") != "1":
+	if os.environ.get("KIOSK_RETROPIE_PATH_COVERAGE", "0") != "1":
 		return
-	path_file = os.environ.get("RETRO_HA_CALLS_FILE_APPEND") or os.environ.get("RETRO_HA_CALLS_FILE")
+	path_file = os.environ.get("KIOSK_RETROPIE_CALLS_FILE_APPEND") or os.environ.get("KIOSK_RETROPIE_CALLS_FILE")
 	if not path_file:
 		return
 	try:
@@ -42,7 +42,7 @@ def is_active(unit: str) -> bool:
 def devices() -> list[str]:
 	# Test injection: allow explicit device list (paths) to avoid relying on real /dev/input.
 	# Format: colon/comma/space-separated list.
-	explicit = os.environ.get("RETRO_HA_INPUT_DEVICES", "").strip()
+	explicit = os.environ.get("KIOSK_RETROPIE_INPUT_DEVICES", "").strip()
 	if explicit:
 		paths: list[str] = []
 		for token in [t for t in explicit.replace(",", ":").split(":") if t.strip()]:
@@ -51,7 +51,7 @@ def devices() -> list[str]:
 		return paths
 
 	# Prefer event devices for consistent key codes.
-	by_id_dir = os.environ.get("RETRO_HA_INPUT_BY_ID_DIR", "/dev/input/by-id")
+	by_id_dir = os.environ.get("KIOSK_RETROPIE_INPUT_BY_ID_DIR", "/dev/input/by-id")
 	by_id = glob.glob(os.path.join(by_id_dir, "*event-joystick"))
 	if not by_id:
 		by_id = glob.glob(os.path.join(by_id_dir, "*joystick"))
@@ -72,31 +72,13 @@ def devices() -> list[str]:
 
 def main() -> int:
 	# Configurable controller codes.
-	# Backwards-compatible fallbacks:
-	# - RETRO_HA_START_BUTTON_CODE (legacy enter/exit trigger)
-	# - RETRO_HA_A_BUTTON_CODE (legacy exit combo second button)
-	enter_trigger_code = int(
-		os.environ.get(
-			"RETRO_HA_RETRO_ENTER_TRIGGER_CODE",
-			os.environ.get("RETRO_HA_START_BUTTON_CODE", "315"),
-		)
-	)
-	exit_trigger_code = int(
-		os.environ.get(
-			"RETRO_HA_RETRO_EXIT_TRIGGER_CODE",
-			os.environ.get("RETRO_HA_START_BUTTON_CODE", "315"),
-		)
-	)
-	exit_second_code = int(
-		os.environ.get(
-			"RETRO_HA_RETRO_EXIT_SECOND_CODE",
-			os.environ.get("RETRO_HA_A_BUTTON_CODE", "304"),
-		)
-	)
-	combo_window_sec = float(os.environ.get("RETRO_HA_COMBO_WINDOW_SEC", "0.75"))
-	debounce_sec = float(os.environ.get("RETRO_HA_START_DEBOUNCE_SEC", "1.0"))
-	max_triggers = int(os.environ.get("RETRO_HA_MAX_TRIGGERS", "0"))
-	max_loops = int(os.environ.get("RETRO_HA_MAX_LOOPS", "0"))
+	enter_trigger_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE", "315"))
+	exit_trigger_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE", "315"))
+	exit_second_code = int(os.environ.get("KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE", "304"))
+	combo_window_sec = float(os.environ.get("KIOSK_RETROPIE_COMBO_WINDOW_SEC", "0.75"))
+	debounce_sec = float(os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC", "1.0"))
+	max_triggers = int(os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS", "0"))
+	max_loops = int(os.environ.get("KIOSK_RETROPIE_MAX_LOOPS", "0"))
 	last_fire = 0.0
 	last_start = 0.0
 	last_a = 0.0
@@ -154,14 +136,14 @@ def main() -> int:
 
 						retro_active = is_active("retro-mode.service")
 
-						# Combo behavior: Exit trigger + exit second while Retro is active returns to HA.
+						# Combo behavior: Exit trigger + exit second while Retro is active returns to kiosk.
 						# We treat the combo as: (A pressed within window) AND Retro active.
 						if retro_active and code == exit_trigger_code and (now - last_a) <= combo_window_sec:
-							log("Exit combo pressed -> returning to HA kiosk mode")
+							log("Exit combo pressed -> returning to kiosk mode")
 							cover_path("controller-tty:trigger-stop-retro")
 							systemctl("stop", "retro-mode.service")
-							cover_path("controller-tty:trigger-start-ha")
-							systemctl("start", "ha-kiosk.service")
+							cover_path("controller-tty:trigger-start-kiosk")
+							systemctl("start", "kiosk.service")
 							triggers += 1
 							if max_triggers and triggers >= max_triggers:
 								return 0
@@ -176,9 +158,9 @@ def main() -> int:
 							continue
 
 						log("Enter Retro trigger pressed -> entering RetroPie mode")
-						# Stop HA kiosk first; Conflicts also enforces this.
-						cover_path("controller-tty:trigger-stop-ha")
-						systemctl("stop", "ha-kiosk.service")
+						# Stop kiosk first; Conflicts also enforces this.
+						cover_path("controller-tty:trigger-stop-kiosk")
+						systemctl("stop", "kiosk.service")
 						cover_path("controller-tty:trigger-start-retro")
 						systemctl("start", "retro-mode.service")
 						triggers += 1

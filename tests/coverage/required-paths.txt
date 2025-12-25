@@ -14,18 +14,18 @@ bootstrap:installer-missing
 bootstrap:installer-dry-run
 bootstrap:installer-exec
 
-controller-ha:ha-not-active
-controller-ha:no-devices
-controller-ha:listening
-controller-ha:trigger-start-retro
-controller-ha:device-open-failed
+controller-kiosk:kiosk-not-active
+controller-kiosk:no-devices
+controller-kiosk:listening
+controller-kiosk:trigger-start-retro
+controller-kiosk:device-open-failed
 
 controller-tty:no-devices
 controller-tty:listening
-controller-tty:trigger-stop-ha
+controller-tty:trigger-stop-kiosk
 controller-tty:trigger-start-retro
 controller-tty:trigger-stop-retro
-controller-tty:trigger-start-ha
+controller-tty:trigger-start-kiosk
 controller-tty:device-open-failed
 
 lib-common:is-sourced-true
@@ -54,8 +54,8 @@ lib-logging:log
 lib-logging:warn
 lib-logging:die
 
-enter-ha-mode:stop-retro
-enter-ha-mode:start-ha
+enter-kiosk-mode:stop-retro
+enter-kiosk-mode:start-kiosk
 
 install:allow-non-root
 install:root-required
@@ -74,10 +74,10 @@ install:optional-retropie-disabled
 install:write-marker-dry-run
 install:write-marker-write
 
-ha-kiosk:missing-ha-url
-ha-kiosk:chromium-browser
-ha-kiosk:missing-chromium
-ha-kiosk:dry-run
+kiosk:missing-kiosk-url
+kiosk:chromium-browser
+kiosk:missing-chromium
+kiosk:dry-run
 
 healthcheck:enter-retro-libdir
 healthcheck:enter-retro-scriptdir

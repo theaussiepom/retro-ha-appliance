@@ -2,16 +2,16 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
 	setup_test_root
-	export RETRO_HA_ALLOW_NON_ROOT=1
-	export RETRO_HA_DRY_RUN=1
+	export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
+	export KIOSK_RETROPIE_DRY_RUN=1
 }
 
 teardown() {
@@ -19,7 +19,7 @@ teardown() {
 }
 
 @test "install.sh dry-run installs shared libs" {
-	run bash "$RETRO_HA_REPO_ROOT/scripts/install.sh"
+	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/install.sh"
 	assert_success
 	assert_file_contains "$TEST_ROOT/calls.log" "scripts/lib/common.sh"
 	assert_file_contains "$TEST_ROOT/calls.log" "lib/common.sh"

@@ -2,10 +2,10 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
 
 setup() {
   TMPDIR="$(mktemp -d)"
@@ -35,7 +35,7 @@ EOF
 PATH script:x
 EOF
 
-  run "$RETRO_HA_REPO_ROOT/tests/bin/recalc-path-coverage.sh" \
+  run "$KIOSK_RETROPIE_REPO_ROOT/tests/bin/recalc-path-coverage.sh" \
     --no-run \
     --required-file "$required" \
     --unit-log "$unit_log" \

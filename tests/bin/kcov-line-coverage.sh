@@ -86,13 +86,13 @@ run_allow_fail() {
   set -e
 }
 
-export RETRO_HA_ROOT="$work_dir/root"
-export RETRO_HA_CALLS_FILE="$work_dir/calls.log"
+export KIOSK_RETROPIE_ROOT="$work_dir/root"
+export KIOSK_RETROPIE_CALLS_FILE="$work_dir/calls.log"
 
 mkdir -p \
-  "$RETRO_HA_ROOT/etc/retro-ha" \
-  "$RETRO_HA_ROOT/var/lib/retro-ha" \
-  "$RETRO_HA_ROOT/var/lock"
+  "$KIOSK_RETROPIE_ROOT/etc/kiosk-retropie" \
+  "$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie" \
+  "$KIOSK_RETROPIE_ROOT/var/lock"
 
 # Create a small set of stubs used to force specific branches.
 stub_bin="$work_dir/bin"
@@ -408,7 +408,7 @@ if [[ "$mode" == "fail" ]]; then
 fi
 
 if [[ "$mode" == "create_marker" ]]; then
-  marker="${RETRO_HA_INSTALLED_MARKER:-}"
+  marker="${KIOSK_RETROPIE_INSTALLED_MARKER:-}"
   if [[ -n "$marker" ]]; then
     mkdir -p "$(dirname "$marker")"
     : >"$marker"
@@ -438,16 +438,16 @@ mkdir -p "$states_only"
 save_backup_plan "$work_dir/does-not-exist" "$states_only" "$work_dir/backup" "subdir" >/dev/null
 
 # common.sh: cover record_call append-none branch.
-export RETRO_HA_PATH_COVERAGE=1
-export RETRO_HA_CALLS_FILE="$work_dir/calls-primary.log"
-unset RETRO_HA_CALLS_FILE_APPEND
+export KIOSK_RETROPIE_PATH_COVERAGE=1
+export KIOSK_RETROPIE_CALLS_FILE="$work_dir/calls-primary.log"
+unset KIOSK_RETROPIE_CALLS_FILE_APPEND
 record_call "primary-only" >/dev/null
 
-# common.sh: cover retro_ha_is_sourced() true branch.
+# common.sh: cover kiosk_retropie_is_sourced() true branch.
 # Trigger it deterministically by making $0 differ from the top stack frame.
 old_argv0="${BASH_ARGV0-}"
 BASH_ARGV0="kcov-coverage-fake-argv0"
-retro_ha_is_sourced >/dev/null || true
+kiosk_retropie_is_sourced >/dev/null || true
 if [[ -n "$old_argv0" ]]; then
   BASH_ARGV0="$old_argv0"
 else
@@ -459,58 +459,58 @@ fi
 source "$ROOT_DIR/scripts/lib/x11.sh"
 (
   export XDG_RUNTIME_DIR="$work_dir/xdg-runtime"
-  retro_ha_runtime_dir >/dev/null
+  kiosk_retropie_runtime_dir >/dev/null
 ) || true
 (
   unset XDG_RUNTIME_DIR
-  retro_ha_runtime_dir 1234 >/dev/null
+  kiosk_retropie_runtime_dir 1234 >/dev/null
 ) || true
-retro_ha_state_dir "/tmp/runtime" >/dev/null
-retro_ha_xinitrc_path "/tmp/state" "ha-xinitrc" >/dev/null
-retro_ha_x_lock_paths ":0" >/dev/null
-retro_ha_xinit_exec_record "/tmp/xinitrc" ":0" "7" >/dev/null
-retro_ha_xinitrc_prelude >/dev/null
+kiosk_retropie_state_dir "/tmp/runtime" >/dev/null
+kiosk_retropie_xinitrc_path "/tmp/state" "kiosk-xinitrc" >/dev/null
+kiosk_retropie_x_lock_paths ":0" >/dev/null
+kiosk_retropie_xinit_exec_record "/tmp/xinitrc" ":0" "7" >/dev/null
+kiosk_retropie_xinitrc_prelude >/dev/null
 
 # Exercise path guard helpers with cover_path defined.
 # shellcheck source=scripts/lib/path.sh
 source "$ROOT_DIR/scripts/lib/path.sh"
-export RETRO_HA_PATH_COVERAGE=0
-retro_ha_path_is_under "/a" "/a" >/dev/null
-retro_ha_path_is_under "/" "/anything" >/dev/null
-retro_ha_path_is_under "/a" "/b" >/dev/null || true
+export KIOSK_RETROPIE_PATH_COVERAGE=0
+kiosk_retropie_path_is_under "/a" "/a" >/dev/null
+kiosk_retropie_path_is_under "/" "/anything" >/dev/null
+kiosk_retropie_path_is_under "/a" "/b" >/dev/null || true
 
 # Hit remaining uncovered lines in logging.sh.
 warn "coverage warn"
 
 # Exercise cover-path plumbing and prefix branches.
-export RETRO_HA_PATH_COVERAGE=1
-unset RETRO_HA_PATHS_FILE RETRO_HA_CALLS_FILE_APPEND RETRO_HA_CALLS_FILE
-retro_ha__cover_path_raw "" >/dev/null
-retro_ha__cover_path_raw "lib-logging:missing-path-file" >/dev/null
-export RETRO_HA_CALLS_FILE_APPEND="$work_dir/paths.append.log"
-retro_ha__cover_path_raw "lib-logging:write-path" >/dev/null
+export KIOSK_RETROPIE_PATH_COVERAGE=1
+unset KIOSK_RETROPIE_PATHS_FILE KIOSK_RETROPIE_CALLS_FILE_APPEND KIOSK_RETROPIE_CALLS_FILE
+kiosk_retropie__cover_path_raw "" >/dev/null
+kiosk_retropie__cover_path_raw "lib-logging:missing-path-file" >/dev/null
+export KIOSK_RETROPIE_CALLS_FILE_APPEND="$work_dir/paths.append.log"
+kiosk_retropie__cover_path_raw "lib-logging:write-path" >/dev/null
 
-RETRO_HA_LOG_PREFIX="custom-prefix" log "log-msg" >/dev/null
-RETRO_HA_LOG_PREFIX="custom-prefix" warn "warn-msg" >/dev/null
+KIOSK_RETROPIE_LOG_PREFIX="custom-prefix" log "log-msg" >/dev/null
+KIOSK_RETROPIE_LOG_PREFIX="custom-prefix" warn "warn-msg" >/dev/null
 (
   set +e
-  RETRO_HA_LOG_PREFIX="custom-prefix" die "die-msg" >/dev/null 2>&1
+  KIOSK_RETROPIE_LOG_PREFIX="custom-prefix" die "die-msg" >/dev/null 2>&1
 ) || true
-unset RETRO_HA_LOG_PREFIX
+unset KIOSK_RETROPIE_LOG_PREFIX
 
 # Exercise config.sh env override and missing/present file branches.
-RETRO_HA_CONFIG_ENV="$work_dir/missing-config.env"
+KIOSK_RETROPIE_CONFIG_ENV="$work_dir/missing-config.env"
 load_config_env
-mkdir -p "${RETRO_HA_CONFIG_ENV%/*}"
-echo 'FOO=bar' >"$RETRO_HA_CONFIG_ENV"
+mkdir -p "${KIOSK_RETROPIE_CONFIG_ENV%/*}"
+echo 'FOO=bar' >"$KIOSK_RETROPIE_CONFIG_ENV"
 load_config_env
-retro_ha_config_env_path >/dev/null
+kiosk_retropie_config_env_path >/dev/null
 
-# Exercise retro_ha_is_sourced (false + true).
+# Exercise kiosk_retropie_is_sourced (false + true).
 (
   set -euo pipefail
   source "$ROOT_DIR/scripts/lib/common.sh"
-  retro_ha_is_sourced >/dev/null || true
+  kiosk_retropie_is_sourced >/dev/null || true
 )
 (
   set -euo pipefail
@@ -519,72 +519,72 @@ retro_ha_config_env_path >/dev/null
 #!/usr/bin/env bash
 set -euo pipefail
 source "$ROOT_DIR/scripts/lib/common.sh"
-retro_ha_is_sourced >/dev/null || true
+kiosk_retropie_is_sourced >/dev/null || true
 EOF
   # shellcheck source=/dev/null
   source "$tmp_entry"
 )
 
 (
-  unset RETRO_HA_ROOT
-  retro_ha_root >/dev/null
+  unset KIOSK_RETROPIE_ROOT
+  kiosk_retropie_root >/dev/null
 )
 (
-  export RETRO_HA_ROOT=""
-  retro_ha_root >/dev/null
+  export KIOSK_RETROPIE_ROOT=""
+  kiosk_retropie_root >/dev/null
 )
 (
-  export RETRO_HA_ROOT="/"
-  retro_ha_root >/dev/null
+  export KIOSK_RETROPIE_ROOT="/"
+  kiosk_retropie_root >/dev/null
 )
 (
-  export RETRO_HA_ROOT="/tmp/retro-ha-root/"
-  retro_ha_root >/dev/null
+  export KIOSK_RETROPIE_ROOT="/tmp/kiosk-retropie-root/"
+  kiosk_retropie_root >/dev/null
 )
 
-retro_ha_path /etc/retro-ha/config.env >/dev/null
-retro_ha_path relative/path >/dev/null
+kiosk_retropie_path /etc/kiosk-retropie/config.env >/dev/null
+kiosk_retropie_path relative/path >/dev/null
 
-# Ensure retro_ha_path covers the root=='/' branch (echo "$abs_path").
+# Ensure kiosk_retropie_path covers the root=='/' branch (echo "$abs_path").
 (
-  unset RETRO_HA_ROOT
-  retro_ha_path /etc/retro-ha/config.env >/dev/null
+  unset KIOSK_RETROPIE_ROOT
+  kiosk_retropie_path /etc/kiosk-retropie/config.env >/dev/null
 )
 (
-  export RETRO_HA_ROOT=""
-  retro_ha_path /etc/retro-ha/config.env >/dev/null
+  export KIOSK_RETROPIE_ROOT=""
+  kiosk_retropie_path /etc/kiosk-retropie/config.env >/dev/null
 )
 
-retro_ha_dirname "" >/dev/null
-retro_ha_dirname "foo" >/dev/null
-retro_ha_dirname "/foo" >/dev/null
-retro_ha_dirname "/foo/" >/dev/null
-retro_ha_dirname "/" >/dev/null
+kiosk_retropie_dirname "" >/dev/null
+kiosk_retropie_dirname "foo" >/dev/null
+kiosk_retropie_dirname "/foo" >/dev/null
+kiosk_retropie_dirname "/foo/" >/dev/null
+kiosk_retropie_dirname "/" >/dev/null
 
 # record_call / cover_path / run_cmd branches.
-export RETRO_HA_CALLS_FILE="$work_dir/calls.log"
-export RETRO_HA_CALLS_FILE_APPEND="$work_dir/calls-append.log"
+export KIOSK_RETROPIE_CALLS_FILE="$work_dir/calls.log"
+export KIOSK_RETROPIE_CALLS_FILE_APPEND="$work_dir/calls-append.log"
 record_call "hello" >/dev/null
 
-export RETRO_HA_PATH_COVERAGE=0
+export KIOSK_RETROPIE_PATH_COVERAGE=0
 cover_path "no-op" >/dev/null
-export RETRO_HA_PATH_COVERAGE=1
+export KIOSK_RETROPIE_PATH_COVERAGE=1
 cover_path "do-op" >/dev/null
 
-export RETRO_HA_DRY_RUN=1
+export KIOSK_RETROPIE_DRY_RUN=1
 run_cmd echo "dry" >/dev/null
-export RETRO_HA_DRY_RUN=0
+export KIOSK_RETROPIE_DRY_RUN=0
 run_cmd true >/dev/null
 
-retro_ha_realpath_m "/a/b/../c" >/dev/null
-retro_ha_realpath_m "a/./b" >/dev/null
+kiosk_retropie_realpath_m "/a/b/../c" >/dev/null
+kiosk_retropie_realpath_m "a/./b" >/dev/null
 
 # Cover common.sh branch where empty root normalizes to '/'.
-export RETRO_HA_ROOT=""
-retro_ha_root >/dev/null
-unset RETRO_HA_ROOT
+export KIOSK_RETROPIE_ROOT=""
+kiosk_retropie_root >/dev/null
+unset KIOSK_RETROPIE_ROOT
 
-export RETRO_HA_DRY_RUN=1
+export KIOSK_RETROPIE_DRY_RUN=1
 svc_start foo.service >/dev/null
 svc_stop foo.service >/dev/null
 
@@ -610,9 +610,9 @@ if [[ -d "$lib_dir" ]]; then
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/install.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/leds/ledctl.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/leds/led-mqtt.sh"
-    kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/enter-ha-mode.sh"
+    kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/enter-kiosk-mode.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
-    kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+    kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/kiosk.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/mode/retro-mode.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
     kcov_wrap_maybe_run_quiet "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
@@ -647,15 +647,15 @@ if [[ "${KCOV_WRAP:-0}" == "1" ]]; then
   trap 'kcov_wrap_merge; cleanup' EXIT
 fi
 
-export RETRO_HA_ROOT="$work_dir/root"
-mkdir -p "$RETRO_HA_ROOT"
+export KIOSK_RETROPIE_ROOT="$work_dir/root"
+mkdir -p "$KIOSK_RETROPIE_ROOT"
 
 # Fake LED sysfs so ledctl can fully exercise success paths.
-mkdir -p "$RETRO_HA_ROOT/sys/class/leds/led0" "$RETRO_HA_ROOT/sys/class/leds/led1"
-echo 'none [mmc0] timer heartbeat' >"$RETRO_HA_ROOT/sys/class/leds/led0/trigger"
-echo 0 >"$RETRO_HA_ROOT/sys/class/leds/led0/brightness"
-echo 'none [default-on] timer heartbeat' >"$RETRO_HA_ROOT/sys/class/leds/led1/trigger"
-echo 0 >"$RETRO_HA_ROOT/sys/class/leds/led1/brightness"
+mkdir -p "$KIOSK_RETROPIE_ROOT/sys/class/leds/led0" "$KIOSK_RETROPIE_ROOT/sys/class/leds/led1"
+echo 'none [mmc0] timer heartbeat' >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led0/trigger"
+echo 0 >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led0/brightness"
+echo 'none [default-on] timer heartbeat' >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led1/trigger"
+echo 0 >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led1/brightness"
 
 # ledctl.sh: usage + invalid inputs + missing sysfs + supported/unsupported triggers.
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh"
@@ -663,19 +663,19 @@ run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" bad on
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" act bad
 
 # Supported trigger branches (ensure trigger files still advertise support).
-echo 'none [mmc0] timer heartbeat' >"$RETRO_HA_ROOT/sys/class/leds/led0/trigger"
-echo 'none [default-on] timer heartbeat' >"$RETRO_HA_ROOT/sys/class/leds/led1/trigger"
+echo 'none [mmc0] timer heartbeat' >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led0/trigger"
+echo 'none [default-on] timer heartbeat' >"$KIOSK_RETROPIE_ROOT/sys/class/leds/led1/trigger"
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" act on
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" pwr on
 
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" act off
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" act on
-run_allow_fail env RETRO_HA_ACT_LED_TRIGGER_ON=nonesuch "$ROOT_DIR/scripts/leds/ledctl.sh" act on
-run_allow_fail env RETRO_HA_ACT_LED=missing-led "$ROOT_DIR/scripts/leds/ledctl.sh" act off
-run_allow_fail env RETRO_HA_ACT_LED=missing-led "$ROOT_DIR/scripts/leds/ledctl.sh" act on
+run_allow_fail env KIOSK_RETROPIE_ACT_LED_TRIGGER_ON=nonesuch "$ROOT_DIR/scripts/leds/ledctl.sh" act on
+run_allow_fail env KIOSK_RETROPIE_ACT_LED=missing-led "$ROOT_DIR/scripts/leds/ledctl.sh" act off
+run_allow_fail env KIOSK_RETROPIE_ACT_LED=missing-led "$ROOT_DIR/scripts/leds/ledctl.sh" act on
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" pwr off
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" pwr on
-run_allow_fail env RETRO_HA_PWR_LED_TRIGGER_ON=nonesuch "$ROOT_DIR/scripts/leds/ledctl.sh" pwr on
+run_allow_fail env KIOSK_RETROPIE_PWR_LED_TRIGGER_ON=nonesuch "$ROOT_DIR/scripts/leds/ledctl.sh" pwr on
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" all on
 run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" all off
 
@@ -687,8 +687,8 @@ run_allow_fail "$ROOT_DIR/scripts/leds/leds-off.sh"
 # wrapper script lines (python logic is covered separately).
 empty_by_id="$work_dir/input-by-id-empty"
 mkdir -p "$empty_by_id"
-run_allow_fail env RETRO_HA_INPUT_BY_ID_DIR="$empty_by_id" KCOV_SYSTEMCTL_ACTIVE_UNITS="" "$ROOT_DIR/scripts/input/controller-listener-ha-mode.sh"
-run_allow_fail env RETRO_HA_INPUT_BY_ID_DIR="$empty_by_id" KCOV_SYSTEMCTL_ACTIVE_UNITS="" "$ROOT_DIR/scripts/input/controller-listener-tty.sh"
+run_allow_fail env KIOSK_RETROPIE_INPUT_BY_ID_DIR="$empty_by_id" KCOV_SYSTEMCTL_ACTIVE_UNITS="" "$ROOT_DIR/scripts/input/controller-listener-kiosk-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_INPUT_BY_ID_DIR="$empty_by_id" KCOV_SYSTEMCTL_ACTIVE_UNITS="" "$ROOT_DIR/scripts/input/controller-listener-tty.sh"
 
 # Cover scripts/leds/lib branch selection.
 leds_lib_link="$ROOT_DIR/scripts/leds/lib"
@@ -699,8 +699,8 @@ run_allow_fail "$ROOT_DIR/scripts/leds/ledctl.sh" act off
 rm -f "$leds_lib_link" 2>/dev/null || true
 
 # mount-nfs.sh: not configured / already mounted / mount fail / mount success.
-export RETRO_HA_DRY_RUN=0
-mp_roms="$RETRO_HA_ROOT/mnt/retro-ha-roms"
+export KIOSK_RETROPIE_DRY_RUN=0
+mp_roms="$KIOSK_RETROPIE_ROOT/mnt/kiosk-retropie-roms"
 mkdir -p "$mp_roms"
 
 # Cover scripts/nfs/lib selection.
@@ -710,49 +710,49 @@ if [[ ! -e "$nfs_lib_link" ]]; then
 fi
 run_allow_fail env NFS_SERVER= NFS_PATH= "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
 run_allow_fail env NFS_SERVER=server NFS_PATH=/export KCOV_MOUNTPOINTS_MOUNTED=":${mp_roms}:" "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
-run_allow_fail env NFS_SERVER=server NFS_PATH=/export RETRO_HA_NFS_MOUNT_POINT="$mp_roms" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
-run_allow_fail env NFS_SERVER=server NFS_PATH=/export RETRO_HA_NFS_MOUNT_POINT="$mp_roms" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=0 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
+run_allow_fail env NFS_SERVER=server NFS_PATH=/export KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_roms" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
+run_allow_fail env NFS_SERVER=server NFS_PATH=/export KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_roms" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=0 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
 
 # mount-nfs-backup.sh: disabled / not configured / already mounted / mount fail / mount success.
-backup_root="$RETRO_HA_ROOT/mnt/retro-ha-backup"
+backup_root="$KIOSK_RETROPIE_ROOT/mnt/kiosk-retropie-backup"
 mkdir -p "$backup_root"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER= RETRO_HA_SAVE_BACKUP_NFS_PATH= "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_NFS_SERVER=server RETRO_HA_SAVE_BACKUP_NFS_PATH=/export RETRO_HA_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=0 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER= KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH= "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER=server KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH=/export KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER=server KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH=/export KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER=server KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH=/export KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root" KCOV_MOUNTPOINTS_MOUNTED="" KCOV_MOUNT_FAIL=0 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
 rm -f "$nfs_lib_link" 2>/dev/null || true
 
 # save-backup.sh: disabled / retro active / not mounted / rsync missing / backup saves+states (delete on).
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/save-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS=":retro-mode.service:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED="" "$ROOT_DIR/scripts/nfs/save-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/save-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS=":retro-mode.service:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED="" "$ROOT_DIR/scripts/nfs/save-backup.sh"
 
 # rsync missing branch: hide rsync in both stub dirs for this one run.
 if [[ -f "$stub_bin/rsync" && -f "$ROOT_DIR/tests/stubs/rsync" ]]; then
   mv "$stub_bin/rsync" "$stub_bin/rsync.__kcov_hidden" 2>/dev/null || true
   mv "$ROOT_DIR/tests/stubs/rsync" "$ROOT_DIR/tests/stubs/rsync.__kcov_hidden" 2>/dev/null || true
-  run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
+  run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
   mv "$stub_bin/rsync.__kcov_hidden" "$stub_bin/rsync" 2>/dev/null || true
   mv "$ROOT_DIR/tests/stubs/rsync.__kcov_hidden" "$ROOT_DIR/tests/stubs/rsync" 2>/dev/null || true
 fi
 
-mkdir -p "$RETRO_HA_ROOT/var/lib/retro-ha/retropie/saves" "$RETRO_HA_ROOT/var/lib/retro-ha/retropie/states"
-run_allow_fail env RETRO_HA_SAVE_BACKUP_ENABLED=1 RETRO_HA_SAVE_BACKUP_DIR="$backup_root" RETRO_HA_SAVE_BACKUP_DELETE=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
+mkdir -p "$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie/retropie/saves" "$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie/retropie/states"
+run_allow_fail env KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1 KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root" KIOSK_RETROPIE_SAVE_BACKUP_DELETE=1 KCOV_SYSTEMCTL_ACTIVE_UNITS="" KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:" "$ROOT_DIR/scripts/nfs/save-backup.sh"
 
 # save-backup.sh: cover defensive unknown-label branch (case *) which continues.
 (
   set -euo pipefail
-  export RETRO_HA_SAVE_BACKUP_ENABLED=1
-  export RETRO_HA_SAVE_BACKUP_DIR="$backup_root"
+  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root"
   export KCOV_SYSTEMCTL_ACTIVE_UNITS=""
   export KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:"
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_DRY_RUN=1
 
   source "$ROOT_DIR/scripts/nfs/save-backup.sh"
 
   save_backup_plan() {
-    printf 'unknown\t%s\t%s\n' "$RETRO_HA_ROOT/does-not-matter" "$RETRO_HA_ROOT/does-not-matter"
+    printf 'unknown\t%s\t%s\n' "$KIOSK_RETROPIE_ROOT/does-not-matter" "$KIOSK_RETROPIE_ROOT/does-not-matter"
   }
 
   main
@@ -772,17 +772,17 @@ if mv "$ROOT_DIR/scripts/lib" "$hidden_sync_roms_lib" 2>/dev/null; then
 fi
 
 # sync-roms.sh rsync missing branch: exclude coverage/test stubs from PATH for this run.
-run_allow_fail env RETRO_HA_DRY_RUN=1 PATH="/usr/bin:/bin" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 PATH="/usr/bin:/bin" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
 
 mv "$stub_bin/rsync" "$stub_bin/rsync.__kcov_hidden"
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
 mv "$stub_bin/rsync.__kcov_hidden" "$stub_bin/rsync"
 
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" KCOV_MOUNTPOINTS_MOUNTED="" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR=missing KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" RETRO_HA_ROMS_SYSTEMS="missing" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" RETRO_HA_ROMS_SYSTEMS="nes,snes" RETRO_HA_ROMS_EXCLUDE_SYSTEMS="nes" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
-run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" RETRO_HA_ROMS_SYNC_DELETE=1 KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" KCOV_MOUNTPOINTS_MOUNTED="" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR=missing KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" KIOSK_RETROPIE_ROMS_SYSTEMS="missing" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" KIOSK_RETROPIE_ROMS_SYSTEMS="nes,snes" KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS="nes" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" KIOSK_RETROPIE_ROMS_SYNC_DELETE=1 KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
 
 # chown missing + delete disabled branch.
 no_chown="$work_dir/bin-no-chown"
@@ -794,21 +794,21 @@ ln -sf /usr/bin/find "$no_chown/find"
 ln -sf /usr/bin/sort "$no_chown/sort"
 ln -sf "$stub_bin/mountpoint" "$no_chown/mountpoint"
 ln -sf "$stub_bin/rsync" "$no_chown/rsync"
-PATH="$no_chown" run_allow_fail env RETRO_HA_NFS_MOUNT_POINT="$mp_src" RETRO_HA_NFS_ROMS_SUBDIR="$src_subdir" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+PATH="$no_chown" run_allow_fail env KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_src" KIOSK_RETROPIE_NFS_ROMS_SUBDIR="$src_subdir" KCOV_MOUNTPOINTS_MOUNTED=":${mp_src}:" "$ROOT_DIR/scripts/nfs/sync-roms.sh"
 
 # led-mqtt.sh: disabled / missing host / missing ledctl / payload handling + state publish + tls/user/pass.
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=0 "$ROOT_DIR/scripts/leds/led-mqtt.sh"
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST= "$ROOT_DIR/scripts/leds/led-mqtt.sh"
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost RETRO_HA_LEDCTL_PATH="$work_dir/missing-ledctl" KCOV_MOSQUITTO_SUB_OUTPUT=$'retro-ha/led/act/set ON\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost MQTT_USERNAME=u MQTT_PASSWORD=p MQTT_TLS=1 RETRO_HA_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT=$'retro-ha/led/act/set ON\nretro-ha/led/pwr/set off\nretro-ha/led/all/set INVALID\nretro-ha/led/all/set OFF\nretro-ha/led/bad/set ON\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost MQTT_TLS=0 RETRO_HA_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT='' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=0 "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=1 MQTT_HOST= "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=1 MQTT_HOST=localhost KIOSK_RETROPIE_LEDCTL_PATH="$work_dir/missing-ledctl" KCOV_MOSQUITTO_SUB_OUTPUT=$'kiosk-retropie/led/act/set ON\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=1 MQTT_HOST=localhost MQTT_USERNAME=u MQTT_PASSWORD=p MQTT_TLS=1 KIOSK_RETROPIE_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT=$'kiosk-retropie/led/act/set ON\nkiosk-retropie/led/pwr/set off\nkiosk-retropie/led/all/set INVALID\nkiosk-retropie/led/all/set OFF\nkiosk-retropie/led/bad/set ON\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=1 MQTT_HOST=localhost MQTT_TLS=0 KIOSK_RETROPIE_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT='' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
 
 # Cover scripts/leds/lib branch selection in led-mqtt.
 leds_lib_link="$ROOT_DIR/scripts/leds/lib"
 if [[ ! -e "$leds_lib_link" ]]; then
   ln -s ../lib "$leds_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost RETRO_HA_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT=$'retro-ha/led/act/set OFF\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_LED_MQTT_ENABLED=1 MQTT_HOST=localhost KIOSK_RETROPIE_LEDCTL_PATH="$ROOT_DIR/scripts/leds/ledctl.sh" KCOV_MOSQUITTO_SUB_OUTPUT=$'kiosk-retropie/led/act/set OFF\n' "$ROOT_DIR/scripts/leds/led-mqtt.sh"
 
 # led-mqtt.sh: missing scripts/lib branch (hide both scripts/leds/lib and scripts/lib).
 (
@@ -833,7 +833,7 @@ run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost RETRO_HA_LEDC
   # invalid target branch
   led_state_payload bad >/dev/null 2>&1 || true
 
-  act_dir="$(retro_ha_path /sys/class/leds/led0)"
+  act_dir="$(kiosk_retropie_path /sys/class/leds/led0)"
   act_brightness="$act_dir/brightness"
 
   # missing brightness file
@@ -849,44 +849,44 @@ run_allow_fail env RETRO_HA_LED_MQTT_ENABLED=1 MQTT_HOST=localhost RETRO_HA_LEDC
   led_state_payload act >/dev/null 2>&1 || true
 
   # poller: state-same-act requires a second loop with unchanged state.
-  export RETRO_HA_LED_MQTT_POLL_SEC=0
-  export RETRO_HA_LED_MQTT_MAX_LOOPS=2
-  led_state_poller retro-ha >/dev/null 2>&1 || true
+  export KIOSK_RETROPIE_LED_MQTT_POLL_SEC=0
+  export KIOSK_RETROPIE_LED_MQTT_MAX_LOOPS=2
+  led_state_poller kiosk-retropie >/dev/null 2>&1 || true
 ) || true
 
 # screen-brightness-mqtt.sh: cover disabled + missing MQTT host + basic set.
-bl_root="$RETRO_HA_ROOT/sys/class/backlight"
+bl_root="$KIOSK_RETROPIE_ROOT/sys/class/backlight"
 bl0="$bl_root/bl0"
 
 # Disabled branch.
-run_allow_fail env RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=0 "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=0 "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # Enabled but missing MQTT_HOST.
-run_allow_fail env RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 MQTT_HOST= "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 MQTT_HOST= "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # Basic successful run with a fake backlight and a small, finite loop.
 mkdir -p "$bl0"
 echo 100 >"$bl0/max_brightness"
 echo 50 >"$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
   MQTT_PORT=1884 \
   MQTT_USERNAME=u \
   MQTT_PASSWORD=p \
   MQTT_TLS=1 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
-  KCOV_MOSQUITTO_SUB_OUTPUT=$'retro-ha/screen/brightness/set bad\nretro-ha/screen/brightness/set 101\nretro-ha/screen/brightness/set 25\n' \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KCOV_MOSQUITTO_SUB_OUTPUT=$'kiosk-retropie/screen/brightness/set bad\nkiosk-retropie/screen/brightness/set 101\nkiosk-retropie/screen/brightness/set 25\n' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # Poller state-same branch requires at least 2 loops with unchanged brightness.
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -895,11 +895,11 @@ rm -rf "$bl0"
 mkdir -p "$bl0"
 echo 50 >"$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -909,11 +909,11 @@ mkdir -p "$bl0"
 echo 0 >"$bl0/max_brightness"
 echo 10 >"$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -923,11 +923,11 @@ mkdir -p "$bl0"
 echo 100 >"$bl0/max_brightness"
 rm -f "$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -937,11 +937,11 @@ mkdir -p "$bl0"
 echo 100 >"$bl0/max_brightness"
 echo abc >"$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -951,13 +951,13 @@ mkdir -p "$bl0"
 echo 100 >"$bl0/max_brightness"
 echo 0 >"$bl0/brightness"
 run_allow_fail env \
-  RETRO_HA_DRY_RUN=1 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_DRY_RUN=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
-  KCOV_MOSQUITTO_SUB_OUTPUT=$'retro-ha/screen/brightness/set 10\n' \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KCOV_MOSQUITTO_SUB_OUTPUT=$'kiosk-retropie/screen/brightness/set 10\n' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # Cover SCRIPT_DIR/lib selection + mosq defaults (no port/user/pass) + TLS off + backlight-name.
@@ -966,15 +966,15 @@ if [[ ! -e "$screen_lib_link" ]]; then
   ln -s ../lib "$screen_lib_link" 2>/dev/null || true
 fi
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
   MQTT_PORT= \
   MQTT_USERNAME= \
   MQTT_PASSWORD= \
   MQTT_TLS=0 \
-  RETRO_HA_BACKLIGHT_NAME=bl0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bl0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 rm -f "$screen_lib_link" 2>/dev/null || true
@@ -983,11 +983,11 @@ rm -f "$screen_lib_link" 2>/dev/null || true
 rm -rf "$bl_root"
 mkdir -p "$bl_root"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME= \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME= \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
@@ -995,15 +995,15 @@ run_allow_fail env \
 rm -f "$ROOT_DIR/scripts/screen/lib" 2>/dev/null || true
 hidden_screen_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_screen_brightness"
 mv "$ROOT_DIR/scripts/lib" "$hidden_screen_lib" 2>/dev/null || true
-run_allow_fail env RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 MQTT_HOST=localhost "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
+run_allow_fail env KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 MQTT_HOST=localhost "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 mv "$hidden_screen_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
 rm -f "$leds_lib_link" 2>/dev/null || true
 
-# ha-kiosk.sh: missing HA_URL / missing chromium / dry-run / non-dry-run (exec xinit stub).
-run_allow_fail env HA_URL= "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
-run_allow_fail env HA_URL=http://example.invalid PATH="$stub_bin:/bin" "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 RETRO_HA_SCREEN_ROTATION=left "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION=left "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+# kiosk.sh: missing KIOSK_URL / missing chromium / dry-run / non-dry-run (exec xinit stub).
+run_allow_fail env KIOSK_URL= "$ROOT_DIR/scripts/mode/kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid PATH="$stub_bin:/bin" "$ROOT_DIR/scripts/mode/kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_SCREEN_ROTATION=left "$ROOT_DIR/scripts/mode/kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=0 KIOSK_RETROPIE_SCREEN_ROTATION=left "$ROOT_DIR/scripts/mode/kiosk.sh"
 
 # Force missing chromium/chromium-browser branch by hiding stubs in both stub dirs.
 if [[ -f "$stub_bin/chromium" && -f "$stub_bin/chromium-browser" && -f "$ROOT_DIR/tests/stubs/chromium" && -f "$ROOT_DIR/tests/stubs/chromium-browser" ]]; then
@@ -1012,7 +1012,7 @@ if [[ -f "$stub_bin/chromium" && -f "$stub_bin/chromium-browser" && -f "$ROOT_DI
   mv "$ROOT_DIR/tests/stubs/chromium" "$ROOT_DIR/tests/stubs/chromium.__kcov_hidden" 2>/dev/null || true
   mv "$ROOT_DIR/tests/stubs/chromium-browser" "$ROOT_DIR/tests/stubs/chromium-browser.__kcov_hidden" 2>/dev/null || true
 
-  run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+  run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/mode/kiosk.sh"
 
   mv "$stub_bin/chromium.__kcov_hidden" "$stub_bin/chromium" 2>/dev/null || true
   mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser" 2>/dev/null || true
@@ -1021,26 +1021,26 @@ if [[ -f "$stub_bin/chromium" && -f "$stub_bin/chromium-browser" && -f "$ROOT_DI
 fi
 
 # Cover SCRIPT_DIR fallback (SCRIPT_DIR='.') by executing via PATH (no slash).
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$ROOT_DIR/scripts/mode:$PATH" ha-kiosk.sh
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 PATH="$ROOT_DIR/scripts/mode:$PATH" kiosk.sh
 
 # Cover scripts/mode/lib branch selection.
 mode_lib_link="$ROOT_DIR/scripts/mode/lib"
 if [[ ! -e "$mode_lib_link" ]]; then
   ln -s ../lib "$mode_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/mode/kiosk.sh"
 
 # Missing scripts/lib branch (hide both scripts/mode/lib and scripts/lib).
 rm -rf "$ROOT_DIR/scripts/mode/lib" 2>/dev/null || true
-hidden_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_ha_kiosk"
+hidden_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_kiosk"
 if mv "$ROOT_DIR/scripts/lib" "$hidden_lib" 2>/dev/null; then
-  run_allow_fail "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+  run_allow_fail "$ROOT_DIR/scripts/mode/kiosk.sh"
   mv "$hidden_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
 fi
 
 # Ensure chromium_bin chooses chromium (not chromium-browser).
 mv "$stub_bin/chromium-browser" "$stub_bin/chromium-browser.__kcov_hidden" 2>/dev/null || true
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/mode/kiosk.sh"
 mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser" 2>/dev/null || true
 
 rm -f "$mode_lib_link" 2>/dev/null || true
@@ -1059,11 +1059,11 @@ ln -sf /usr/bin/tr "$no_chromium/tr"
 ln -sf "$stub_bin/xinit" "$no_chromium/xinit"
 ln -sf "$stub_bin/xset" "$no_chromium/xset"
 ln -sf "$stub_bin/xrandr" "$no_chromium/xrandr"
-PATH="$no_chromium" run_allow_fail env HA_URL=http://example.invalid "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+PATH="$no_chromium" run_allow_fail env KIOSK_URL=http://example.invalid "$ROOT_DIR/scripts/mode/kiosk.sh"
 
 # Force chromium selection (hide chromium-browser).
 mv "$stub_bin/chromium-browser" "$stub_bin/chromium-browser.__kcov_hidden"
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION= "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=0 KIOSK_RETROPIE_SCREEN_ROTATION= "$ROOT_DIR/scripts/mode/kiosk.sh"
 mv "$stub_bin/chromium-browser.__kcov_hidden" "$stub_bin/chromium-browser"
 
 # Reliably cover the chromium (not chromium-browser) branch.
@@ -1080,7 +1080,7 @@ ln -sf /usr/bin/id "$chromium_only/id"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$chromium_only/chromium"
 chmod +x "$chromium_only/chromium"
 
-run_allow_fail env HA_URL=http://example.invalid RETRO_HA_DRY_RUN=1 PATH="$chromium_only" "$ROOT_DIR/scripts/mode/ha-kiosk.sh"
+run_allow_fail env KIOSK_URL=http://example.invalid KIOSK_RETROPIE_DRY_RUN=1 PATH="$chromium_only" "$ROOT_DIR/scripts/mode/kiosk.sh"
 
 # save-backup.sh: rsync missing branch (use a PATH that contains required stubs but not rsync).
 bin_no_rsync="$work_dir/bin-no-rsync"
@@ -1094,9 +1094,9 @@ ln -sf "$stub_bin/mountpoint" "$bin_no_rsync/mountpoint"
 (
   set +e
   export PATH="$bin_no_rsync"
-  export RETRO_HA_DRY_RUN=1
-  export RETRO_HA_SAVE_BACKUP_ENABLED=1
-  export RETRO_HA_SAVE_BACKUP_DIR="$backup_root"
+  export KIOSK_RETROPIE_DRY_RUN=1
+  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export KIOSK_RETROPIE_SAVE_BACKUP_DIR="$backup_root"
   export KCOV_SYSTEMCTL_ACTIVE_UNITS=""
   export KCOV_MOUNTPOINTS_MOUNTED=":${backup_root}:"
   # shellcheck source=scripts/nfs/save-backup.sh
@@ -1108,8 +1108,8 @@ ln -sf "$stub_bin/mountpoint" "$bin_no_rsync/mountpoint"
 (
   set +e
   export PATH="$bin_no_rsync"
-  export RETRO_HA_DRY_RUN=1
-  export RETRO_HA_NFS_MOUNT_POINT="$mp_roms"
+  export KIOSK_RETROPIE_DRY_RUN=1
+  export KIOSK_RETROPIE_NFS_MOUNT_POINT="$mp_roms"
   # shellcheck source=scripts/nfs/sync-roms.sh
   source "$ROOT_DIR/scripts/nfs/sync-roms.sh"
   main
@@ -1118,16 +1118,16 @@ ln -sf "$stub_bin/mountpoint" "$bin_no_rsync/mountpoint"
 # screen-brightness-mqtt.sh: directly exercise poller for state-same + sleep.
 (
   set +e
-  bl_root="$RETRO_HA_ROOT/sys/class/backlight"
+  bl_root="$KIOSK_RETROPIE_ROOT/sys/class/backlight"
   mkdir -p "$bl_root/blc"
   echo 100 >"$bl_root/blc/max_brightness"
   echo 50 >"$bl_root/blc/brightness"
-  export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0
-  export RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2
-  export RETRO_HA_BACKLIGHT_NAME=blc
+  export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0
+  export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2
+  export KIOSK_RETROPIE_BACKLIGHT_NAME=blc
   # shellcheck source=scripts/screen/screen-brightness-mqtt.sh
   source "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
-  brightness_state_poller "retro-ha"
+  brightness_state_poller "kiosk-retropie"
 ) || true
 
 # retro-mode.sh: missing xinit / missing emulationstation / dry-run / non-dry-run.
@@ -1135,7 +1135,7 @@ no_xinit="$work_dir/bin-no-xinit"
 mkdir -p "$no_xinit"
 ln -sf /usr/bin/bash "$no_xinit/bash"
 ln -sf /usr/bin/dirname "$no_xinit/dirname"
-run_allow_fail env PATH="$no_xinit" RETRO_HA_PATH_COVERAGE=0 RETRO_HA_DRY_RUN=0 "$ROOT_DIR/scripts/mode/retro-mode.sh"
+run_allow_fail env PATH="$no_xinit" KIOSK_RETROPIE_PATH_COVERAGE=0 KIOSK_RETROPIE_DRY_RUN=0 "$ROOT_DIR/scripts/mode/retro-mode.sh"
 
 xinit_only="$work_dir/bin-xinit-only"
 mkdir -p "$xinit_only"
@@ -1143,12 +1143,12 @@ ln -sf /usr/bin/bash "$xinit_only/bash"
 ln -sf /usr/bin/dirname "$xinit_only/dirname"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$xinit_only/xinit"
 chmod +x "$xinit_only/xinit"
-run_allow_fail env PATH="$xinit_only" RETRO_HA_PATH_COVERAGE=0 RETRO_HA_DRY_RUN=0 "$ROOT_DIR/scripts/mode/retro-mode.sh"
+run_allow_fail env PATH="$xinit_only" KIOSK_RETROPIE_PATH_COVERAGE=0 KIOSK_RETROPIE_DRY_RUN=0 "$ROOT_DIR/scripts/mode/retro-mode.sh"
 
 # Provide both xinit + emulationstation for the remaining dry-run / non-dry-run paths.
 run_allow_fail env PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/mode/retro-mode.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_SCREEN_ROTATION=right "$ROOT_DIR/scripts/mode/retro-mode.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=0 RETRO_HA_SCREEN_ROTATION=right "$ROOT_DIR/scripts/mode/retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_SCREEN_ROTATION=right "$ROOT_DIR/scripts/mode/retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=0 KIOSK_RETROPIE_SCREEN_ROTATION=right "$ROOT_DIR/scripts/mode/retro-mode.sh"
 
 # retro-mode missing scripts/lib branch (hide both scripts/mode/lib and scripts/lib).
 rm -rf "$ROOT_DIR/scripts/mode/lib" 2>/dev/null || true
@@ -1165,13 +1165,13 @@ rm -rf "$nfs_lib_link" 2>/dev/null || true
 
 # if branch: scripts/nfs/lib exists
 ln -s ../lib "$nfs_lib_link" 2>/dev/null || true
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
 rm -rf "$nfs_lib_link" 2>/dev/null || true
 
 # elif branch: scripts/lib exists
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/nfs/mount-nfs-backup.sh"
 
 # else branch: hide scripts/lib (and ensure scripts/nfs/lib is absent)
 hidden_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_nfs_mount"
@@ -1187,7 +1187,7 @@ fi
   set +e
   cd "$ROOT_DIR/scripts/mode" || exit 0
   ln -s ../lib "lib" 2>/dev/null || true
-  RETRO_HA_DRY_RUN=1 PATH="$stub_bin:/usr/bin:/bin" /usr/bin/bash ./retro-mode.sh >/dev/null 2>&1
+  KIOSK_RETROPIE_DRY_RUN=1 PATH="$stub_bin:/usr/bin:/bin" /usr/bin/bash ./retro-mode.sh >/dev/null 2>&1
   rm -f "lib" >/dev/null 2>&1 || true
 ) || true
 
@@ -1196,8 +1196,8 @@ nfs_lib_link="$ROOT_DIR/scripts/nfs/lib"
 if [[ ! -e "$nfs_lib_link" ]]; then
   ln -s ../lib "$nfs_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/save-backup.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_NFS_ROMS_SUBDIR= "$ROOT_DIR/scripts/nfs/sync-roms.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0 "$ROOT_DIR/scripts/nfs/save-backup.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_NFS_ROMS_SUBDIR= "$ROOT_DIR/scripts/nfs/sync-roms.sh"
 rm -f "$nfs_lib_link" 2>/dev/null || true
 
 # save-backup.sh missing scripts/lib branch (hide scripts/lib and ensure scripts/nfs/lib is absent).
@@ -1213,17 +1213,17 @@ mode_lib_link="$ROOT_DIR/scripts/mode/lib"
 if [[ ! -e "$mode_lib_link" ]]; then
   ln -s ../lib "$mode_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/mode/retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/mode/retro-mode.sh"
 rm -f "$mode_lib_link" 2>/dev/null || true
 
-# enter-ha-mode.sh: exercise svc_stop + svc_start via dry-run and non-dry-run.
+# enter-kiosk-mode.sh: exercise svc_stop + svc_start via dry-run and non-dry-run.
 # Also cover the "$SCRIPT_DIR/lib" branch by temporarily creating scripts/mode/lib.
 mode_lib_link="$ROOT_DIR/scripts/mode/lib"
 if [[ ! -e "$mode_lib_link" ]]; then
   ln -s ../lib "$mode_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/mode/enter-ha-mode.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=0 "$ROOT_DIR/scripts/mode/enter-ha-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/mode/enter-kiosk-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=0 "$ROOT_DIR/scripts/mode/enter-kiosk-mode.sh"
 rm -f "$mode_lib_link" 2>/dev/null || true
 
 # enter-retro-mode.sh: exercise ledctl path resolution (libdir and repo fallback).
@@ -1231,23 +1231,23 @@ tmp_lib="$work_dir/lib"
 mkdir -p "$tmp_lib"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$tmp_lib/ledctl.sh"
 chmod +x "$tmp_lib/ledctl.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR="$tmp_lib" "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR="$tmp_lib" "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
 
-# Cover RETRO_HA_SKIP_LEDCTL branch.
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= RETRO_HA_SKIP_LEDCTL=1 "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+# Cover KIOSK_RETROPIE_SKIP_LEDCTL branch.
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= KIOSK_RETROPIE_SKIP_LEDCTL=1 "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
 
 # controller-codes.sh: execute once to include in coverage (it will fail without devices).
 empty_by_id="$work_dir/empty-by-id"
 mkdir -p "$empty_by_id"
-run_allow_fail env RETRO_HA_INPUT_BY_ID_DIR="$empty_by_id" "$ROOT_DIR/scripts/input/controller-codes.sh"
+run_allow_fail env KIOSK_RETROPIE_INPUT_BY_ID_DIR="$empty_by_id" "$ROOT_DIR/scripts/input/controller-codes.sh"
 
 # Cover scripts/mode/lib selection in enter-retro-mode.
 mode_lib_link="$ROOT_DIR/scripts/mode/lib"
 if [[ ! -e "$mode_lib_link" ]]; then
   ln -s ../lib "$mode_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
 rm -f "$mode_lib_link" 2>/dev/null || true
 
 # enter-retro-mode.sh: missing scripts/lib branch.
@@ -1260,11 +1260,11 @@ fi
 
 # Force fallback to installed default by making repo ledctl non-executable.
 chmod -x "$ROOT_DIR/scripts/leds/ledctl.sh" || true
-run_allow_fail env RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/mode/enter-retro-mode.sh"
 chmod +x "$ROOT_DIR/scripts/leds/ledctl.sh" || true
 
 (
-  # Directly call retro_ha_ledctl_path to hit the SCRIPT_DIR/ledctl.sh candidate lines
+  # Directly call kiosk_retropie_ledctl_path to hit the SCRIPT_DIR/ledctl.sh candidate lines
   # without executing a new script file (avoid expanding kcov's file set).
   set -euo pipefail
   tmp_candidate="$ROOT_DIR/scripts/mode/ledctl.__kcov_candidate"
@@ -1276,22 +1276,22 @@ chmod +x "$ROOT_DIR/scripts/leds/ledctl.sh" || true
   # Simulate existence of SCRIPT_DIR/ledctl.sh by pointing SCRIPT_DIR at a dir where it exists.
   SCRIPT_DIR="${tmp_candidate%/*}"
   mv "$tmp_candidate" "$SCRIPT_DIR/ledctl.sh"
-  retro_ha_ledctl_path >/dev/null
+  kiosk_retropie_ledctl_path >/dev/null
   rm -f "$SCRIPT_DIR/ledctl.sh"
 )
 
-# healthcheck.sh: ha active / retro active / failover path selection.
-run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":ha-kiosk.service:" RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
-run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":retro-mode.service:" RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
+# healthcheck.sh: kiosk active / retro active / failover path selection.
+run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":kiosk.service:" KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
+run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":retro-mode.service:" KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
 
 hc_lib="$work_dir/hc-lib"
 mkdir -p "$hc_lib"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$hc_lib/enter-retro-mode.sh"
 chmod +x "$hc_lib/enter-retro-mode.sh"
-run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR="$hc_lib" "$ROOT_DIR/scripts/healthcheck.sh"
+run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR="$hc_lib" "$ROOT_DIR/scripts/healthcheck.sh"
 
-# Choose scripts/mode/enter-retro-mode.sh (no RETRO_HA_LIBDIR).
-run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
+# Choose scripts/mode/enter-retro-mode.sh (no KIOSK_RETROPIE_LIBDIR).
+run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
 
 # Cover healthcheck: script_dir/enter-retro-mode.sh branch.
 (
@@ -1299,7 +1299,7 @@ run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LI
   tmp_enter="$ROOT_DIR/scripts/enter-retro-mode.sh"
   printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$tmp_enter"
   chmod +x "$tmp_enter"
-  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
+  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
   rm -f "$tmp_enter" >/dev/null 2>&1 || true
 ) || true
 
@@ -1308,7 +1308,7 @@ run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LI
   set +e
   tmp_hidden="$ROOT_DIR/scripts/mode/enter-retro-mode.sh.__kcov_hidden"
   mv "$ROOT_DIR/scripts/mode/enter-retro-mode.sh" "$tmp_hidden" 2>/dev/null || exit 0
-  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" RETRO_HA_DRY_RUN=1 RETRO_HA_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
+  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS="" KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_LIBDIR= "$ROOT_DIR/scripts/healthcheck.sh"
   mv "$tmp_hidden" "$ROOT_DIR/scripts/mode/enter-retro-mode.sh" 2>/dev/null || true
 ) || true
 
@@ -1326,14 +1326,14 @@ if [[ ! -d "$root_lib" ]]; then
   mkdir -p "$root_lib"
   cp -R "$ROOT_DIR/scripts/lib/"* "$root_lib/" 2>/dev/null || true
   mv "$ROOT_DIR/scripts/lib" "$hidden_scripts_lib" 2>/dev/null || true
-  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":ha-kiosk.service:" RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
+  run_allow_fail env KCOV_SYSTEMCTL_ACTIVE_UNITS=":kiosk.service:" KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/healthcheck.sh"
   mv "$hidden_scripts_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
   rm -rf "$root_lib" 2>/dev/null || true
 fi
 
 # retropie/install-retropie.sh: require_root fail + user missing + git/sudo missing + home missing + clone/update + dry-run/non-dry-run.
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 EUID=1000 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 KCOV_RETROPI_EXISTS=0 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=0 EUID=1000 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KCOV_RETROPI_EXISTS=0 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
 home="$work_dir/home/retropi"
 mkdir -p "$home"
@@ -1343,7 +1343,7 @@ retropie_lib_link="$ROOT_DIR/scripts/retropie/lib"
 if [[ ! -e "$retropie_lib_link" ]]; then
   ln -s ../lib "$retropie_lib_link" 2>/dev/null || true
 fi
-run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 rm -f "$retropie_lib_link" 2>/dev/null || true
 
 nogit="$work_dir/bin-nogit"
@@ -1360,7 +1360,7 @@ ln -sf /usr/bin/chmod "$nogit/chmod"
 ln -sf /usr/bin/ln "$nogit/ln"
 ln -sf "$stub_bin/getent" "$nogit/getent"
 ln -sf "$stub_bin/sudo" "$nogit/sudo"
-run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$nogit" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$nogit" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
 nosudo="$work_dir/bin-nosudo"
 mkdir -p "$nosudo"
@@ -1376,7 +1376,7 @@ ln -sf /usr/bin/chmod "$nosudo/chmod"
 ln -sf /usr/bin/ln "$nosudo/ln"
 ln -sf "$stub_bin/getent" "$nosudo/getent"
 ln -sf "$stub_bin/git" "$nosudo/git"
-run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$nosudo" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$nosudo" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
 # Home missing branch: keep getent successful but with an empty home field.
 home_missing_bin="$work_dir/bin-home-missing"
@@ -1406,15 +1406,15 @@ fi
 exec /usr/bin/getent "$@"
 EOF
 chmod +x "$home_missing_bin/getent"
-run_allow_fail env PATH="$home_missing_bin" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env PATH="$home_missing_bin" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
 # Ensure install-retropie missing git/sudo/home branches are covered even if kcov wrapper attribution is flaky.
 # Run the script by sourcing it in a subshell with a controlled PATH; it will execute main and call die.
 (
   set +e
   export PATH="$nogit"
-  export RETRO_HA_ALLOW_NON_ROOT=1
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
+  export KIOSK_RETROPIE_DRY_RUN=1
   export KCOV_RETROPI_EXISTS=1
   export KCOV_GETENT_HOME="$home"
   # shellcheck source=scripts/retropie/install-retropie.sh
@@ -1424,8 +1424,8 @@ run_allow_fail env PATH="$home_missing_bin" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_D
 (
   set +e
   export PATH="$nosudo"
-  export RETRO_HA_ALLOW_NON_ROOT=1
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
+  export KIOSK_RETROPIE_DRY_RUN=1
   export KCOV_RETROPI_EXISTS=1
   export KCOV_GETENT_HOME="$home"
   # shellcheck source=scripts/retropie/install-retropie.sh
@@ -1435,15 +1435,15 @@ run_allow_fail env PATH="$home_missing_bin" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_D
 (
   set +e
   export PATH="$home_missing_bin"
-  export RETRO_HA_ALLOW_NON_ROOT=1
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
+  export KIOSK_RETROPIE_DRY_RUN=1
   export KCOV_RETROPI_EXISTS=1
   # shellcheck source=scripts/retropie/install-retropie.sh
   source "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 ) || true
 
 # screen-brightness-mqtt.sh: cover remaining branches (clamp>100, state-same, sleep, no-backlight, max missing/invalid).
-bl_root="$(retro_ha_path /sys/class/backlight)"
+bl_root="$(kiosk_retropie_path /sys/class/backlight)"
 mkdir -p "$bl_root"
 
 # Clamp to 100% when raw > max.
@@ -1451,35 +1451,35 @@ mkdir -p "$bl_root/blc"
 printf '%s\n' '10' >"$bl_root/blc/max_brightness"
 printf '%s\n' '20' >"$bl_root/blc/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=blc \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2 \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=blc \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=2 \
   KCOV_MOSQUITTO_SUB_OUTPUT='' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # No backlight device (auto-detect empty) -> die.
 rm -rf "$bl_root" && mkdir -p "$bl_root"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME= \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
-  KCOV_MOSQUITTO_SUB_OUTPUT='retro-ha/screen/brightness/set 10\n' \
+  KIOSK_RETROPIE_BACKLIGHT_NAME= \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KCOV_MOSQUITTO_SUB_OUTPUT='kiosk-retropie/screen/brightness/set 10\n' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # max_brightness missing -> die.
 mkdir -p "$bl_root/blm"
 printf '%s\n' '1' >"$bl_root/blm/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=blm \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
-  KCOV_MOSQUITTO_SUB_OUTPUT='retro-ha/screen/brightness/set 10\n' \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=blm \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KCOV_MOSQUITTO_SUB_OUTPUT='kiosk-retropie/screen/brightness/set 10\n' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 # max_brightness invalid -> die.
@@ -1487,21 +1487,21 @@ mkdir -p "$bl_root/bli"
 printf '%s\n' '0' >"$bl_root/bli/max_brightness"
 printf '%s\n' '1' >"$bl_root/bli/brightness"
 run_allow_fail env \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1 \
   MQTT_HOST=localhost \
-  RETRO_HA_BACKLIGHT_NAME=bli \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
-  RETRO_HA_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
-  KCOV_MOSQUITTO_SUB_OUTPUT='retro-ha/screen/brightness/set 10\n' \
+  KIOSK_RETROPIE_BACKLIGHT_NAME=bli \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=0 \
+  KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1 \
+  KCOV_MOSQUITTO_SUB_OUTPUT='kiosk-retropie/screen/brightness/set 10\n' \
   "$ROOT_DIR/scripts/screen/screen-brightness-mqtt.sh"
 
 setup_dir="$home/RetroPie-Setup"
 rm -rf "$setup_dir"
-run_allow_fail env KCOV_GETENT_HOME="$home" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 RETRO_HA_RETROPIE_SETUP_DIR="$setup_dir" "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KCOV_GETENT_HOME="$home" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_RETROPIE_SETUP_DIR="$setup_dir" "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 mkdir -p "$setup_dir/.git"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$setup_dir/retropie_packages.sh"
 chmod +x "$setup_dir/retropie_packages.sh"
-run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 RETRO_HA_RETROPIE_SETUP_DIR="$setup_dir" "$ROOT_DIR/scripts/retropie/install-retropie.sh"
+run_allow_fail env KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KIOSK_RETROPIE_RETROPIE_SETUP_DIR="$setup_dir" "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 
 # Missing scripts/lib branch (temporarily hide scripts/lib and ensure scripts/retropie/lib isn't present).
 rm -f "$ROOT_DIR/scripts/retropie/lib" 2>/dev/null || true
@@ -1511,7 +1511,7 @@ run_allow_fail "$ROOT_DIR/scripts/retropie/install-retropie.sh"
 mv "$hidden_retropie_install_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
 
 # retropie/configure-retropie-storage.sh: require_root fail + getent missing + guardrails + retroarch missing/present + ensure_kv_line dry-run and non-dry-run.
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 RETRO_HA_EUID_OVERRIDE=1000 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=0 KIOSK_RETROPIE_EUID_OVERRIDE=1000 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 # Configure-retropie-storage: missing scripts/lib branch.
 rm -f "$ROOT_DIR/scripts/retropie/lib" 2>/dev/null || true
@@ -1526,61 +1526,61 @@ retropie_lib_link="$ROOT_DIR/scripts/retropie/lib"
 if [[ ! -e "$retropie_lib_link" ]]; then
   ln -s ../lib "$retropie_lib_link" 2>/dev/null || true
 fi
-KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 rm -f "$retropie_lib_link" 2>/dev/null || true
 
-KCOV_GETENT_HOME="" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
-nfs_mp="$RETRO_HA_ROOT/mnt/retro-ha-roms"
+nfs_mp="$KIOSK_RETROPIE_ROOT/mnt/kiosk-retropie-roms"
 mkdir -p "$nfs_mp"
-KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" RETRO_HA_ROMS_DIR="$nfs_mp/roms" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" KIOSK_RETROPIE_ROMS_DIR="$nfs_mp/roms" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 # Configure-retropie-storage: saves/states under NFS mount guardrails.
 KCOV_GETENT_HOME="$home" run_allow_fail env \
-  RETRO_HA_ALLOW_NON_ROOT=1 \
-  RETRO_HA_DRY_RUN=1 \
-  RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" \
-  RETRO_HA_ROMS_DIR="$(retro_ha_path /var/lib/retro-ha/retropie/roms)" \
-  RETRO_HA_SAVES_DIR="$nfs_mp/saves" \
-  RETRO_HA_STATES_DIR="$(retro_ha_path /var/lib/retro-ha/retropie/states)" \
+  KIOSK_RETROPIE_ALLOW_NON_ROOT=1 \
+  KIOSK_RETROPIE_DRY_RUN=1 \
+  KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" \
+  KIOSK_RETROPIE_ROMS_DIR="$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/roms)" \
+  KIOSK_RETROPIE_SAVES_DIR="$nfs_mp/saves" \
+  KIOSK_RETROPIE_STATES_DIR="$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/states)" \
   "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 KCOV_GETENT_HOME="$home" run_allow_fail env \
-  RETRO_HA_ALLOW_NON_ROOT=1 \
-  RETRO_HA_DRY_RUN=1 \
-  RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" \
-  RETRO_HA_ROMS_DIR="$(retro_ha_path /var/lib/retro-ha/retropie/roms)" \
-  RETRO_HA_SAVES_DIR="$(retro_ha_path /var/lib/retro-ha/retropie/saves)" \
-  RETRO_HA_STATES_DIR="$nfs_mp/states" \
+  KIOSK_RETROPIE_ALLOW_NON_ROOT=1 \
+  KIOSK_RETROPIE_DRY_RUN=1 \
+  KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" \
+  KIOSK_RETROPIE_ROMS_DIR="$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/roms)" \
+  KIOSK_RETROPIE_SAVES_DIR="$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/saves)" \
+  KIOSK_RETROPIE_STATES_DIR="$nfs_mp/states" \
   "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
-retro_cfg="$RETRO_HA_ROOT/opt/retropie/configs/all/retroarch.cfg"
+retro_cfg="$KIOSK_RETROPIE_ROOT/opt/retropie/configs/all/retroarch.cfg"
 rm -f "$retro_cfg"
-KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 mkdir -p "${retro_cfg%/*}"
 printf '%s\n' 'savefile_directory = "old"' >"$retro_cfg"
-KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" PATH="$stub_bin:/usr/bin:/bin" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 # Dry-run kv writes while RetroArch config exists.
-KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=1 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=1 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
-# Make legacy /var/lib/retro-ha/roms exist so the script skips ln -s.
-mkdir -p "$(retro_ha_path /var/lib/retro-ha/roms)"
+# Make legacy /var/lib/kiosk-retropie/roms exist so the script skips ln -s.
+mkdir -p "$(kiosk_retropie_path /var/lib/kiosk-retropie/roms)"
 
 # Target exists as a directory -> mv branch.
 mkdir -p "$home/RetroPie/roms"
-KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+KCOV_GETENT_HOME="$home" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 # Target is already a symlink -> -L branch.
 rm -rf "$home/RetroPie/roms"
-ln -sf "$(retro_ha_path /var/lib/retro-ha/retropie/roms)" "$home/RetroPie/roms"
-KCOV_GETENT_HOME="$home" run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 RETRO_HA_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
+ln -sf "$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/roms)" "$home/RetroPie/roms"
+KCOV_GETENT_HOME="$home" run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KIOSK_RETROPIE_NFS_MOUNT_POINT="$nfs_mp" "$ROOT_DIR/scripts/retropie/configure-retropie-storage.sh"
 
 # Prepare a config.env for bootstrap/install to load.
-cat >"$RETRO_HA_ROOT/etc/retro-ha/config.env" <<EOF
-RETRO_HA_REPO_URL=https://example.invalid/repo.git
-RETRO_HA_REPO_REF=main
+cat >"$KIOSK_RETROPIE_ROOT/etc/kiosk-retropie/config.env" <<EOF
+KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git
+KIOSK_RETROPIE_REPO_REF=main
 EOF
 
 bootstrap_empty_config="$work_dir/bootstrap-empty-config.env"
@@ -1594,19 +1594,19 @@ chmod +x "$bootstrap_missing_lib_dir/bootstrap.sh"
 run_allow_fail "$bootstrap_missing_lib_dir/bootstrap.sh"
 
 # Exercise bootstrap branches.
-export RETRO_HA_DRY_RUN=1
+export KIOSK_RETROPIE_DRY_RUN=1
 export GETENT_HOSTS_EXIT_CODE=0
 export CURL_EXIT_CODE=0
 
-checkout_dir="$RETRO_HA_ROOT/opt/retro-ha-appliance"
+checkout_dir="$KIOSK_RETROPIE_ROOT/opt/kiosk-retropie"
 mkdir -p "$checkout_dir"
 
 # Clone path (no .git dir)
 rm -rf "$checkout_dir/.git"
 run_allow_fail env \
-  RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF=main \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_dir" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF=main \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
@@ -1615,9 +1615,9 @@ run_allow_fail env \
 # Already cloned path
 mkdir -p "$checkout_dir/.git"
 run_allow_fail env \
-  RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF=main \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_dir" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF=main \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
@@ -1625,9 +1625,9 @@ run_allow_fail env \
 
 # Missing installer branch
 run_allow_fail env \
-  RETRO_HA_CHECKOUT_DIR="$RETRO_HA_ROOT/opt/missing-installer" \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF=main \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$KIOSK_RETROPIE_ROOT/opt/missing-installer" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF=main \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
@@ -1635,36 +1635,36 @@ run_allow_fail env \
 
 # Missing repo URL/REF branches.
 run_allow_fail env \
-  RETRO_HA_CONFIG_ENV="$bootstrap_empty_config" \
-  RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
-  RETRO_HA_REPO_URL= \
-  RETRO_HA_REPO_REF=main \
+  KIOSK_RETROPIE_CONFIG_ENV="$bootstrap_empty_config" \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_dir" \
+  KIOSK_RETROPIE_REPO_URL= \
+  KIOSK_RETROPIE_REPO_REF=main \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
   "$ROOT_DIR/scripts/bootstrap.sh"
 
 run_allow_fail env \
-  RETRO_HA_CONFIG_ENV="$bootstrap_empty_config" \
-  RETRO_HA_CHECKOUT_DIR="$checkout_dir" \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF= \
+  KIOSK_RETROPIE_CONFIG_ENV="$bootstrap_empty_config" \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_dir" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF= \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
   "$ROOT_DIR/scripts/bootstrap.sh"
 
 # Installer dry-run branch (ensure installer exists and is executable).
-checkout_dry="$RETRO_HA_ROOT/opt/retro-ha-dry"
+checkout_dry="$KIOSK_RETROPIE_ROOT/opt/kiosk-retropie-dry"
 mkdir -p "$checkout_dry/.git" "$checkout_dry/scripts"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$checkout_dry/scripts/install.sh"
 chmod +x "$checkout_dry/scripts/install.sh"
 run_allow_fail env \
-  RETRO_HA_DRY_RUN=1 \
-  RETRO_HA_CONFIG_ENV="$bootstrap_empty_config" \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF=main \
-  RETRO_HA_CHECKOUT_DIR="$checkout_dry" \
+  KIOSK_RETROPIE_DRY_RUN=1 \
+  KIOSK_RETROPIE_CONFIG_ENV="$bootstrap_empty_config" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF=main \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_dry" \
   PATH="$stub_bin:/usr/bin:/bin" \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
@@ -1677,56 +1677,56 @@ if [[ ! -d "$root_lib" ]]; then
   mkdir -p "$root_lib"
   cp -R "$ROOT_DIR/scripts/lib/"* "$root_lib/" 2>/dev/null || true
   mv "$ROOT_DIR/scripts/lib" "$hidden_scripts_lib" 2>/dev/null || true
-  run_allow_fail env RETRO_HA_DRY_RUN=1 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 RETRO_HA_REPO_URL=https://example.invalid/repo.git RETRO_HA_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
+  run_allow_fail env KIOSK_RETROPIE_DRY_RUN=1 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git KIOSK_RETROPIE_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
   mv "$hidden_scripts_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
   rm -rf "$root_lib" 2>/dev/null || true
 fi
 
 # Marker present early-exit.
-installed_marker="$RETRO_HA_ROOT/var/lib/retro-ha/installed"
+installed_marker="$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie/installed"
 mkdir -p "${installed_marker%/*}"
 : >"$installed_marker"
-run_allow_fail env RETRO_HA_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 "$ROOT_DIR/scripts/bootstrap.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=1 "$ROOT_DIR/scripts/bootstrap.sh"
 rm -f "$installed_marker"
 
 # Network not ready (DNS fail / HTTPS fail).
-run_allow_fail env RETRO_HA_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=0 KCOV_CURL_OK=1 RETRO_HA_REPO_URL=https://example.invalid/repo.git RETRO_HA_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
-run_allow_fail env RETRO_HA_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=0 RETRO_HA_REPO_URL=https://example.invalid/repo.git RETRO_HA_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=0 KCOV_CURL_OK=1 KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git KIOSK_RETROPIE_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
+run_allow_fail env KIOSK_RETROPIE_DRY_RUN=0 KCOV_GETENT_HOSTS_OK=1 KCOV_CURL_OK=0 KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git KIOSK_RETROPIE_REPO_REF=main "$ROOT_DIR/scripts/bootstrap.sh"
 
 # Cover bootstrap exec installer branch.
-checkout_exec="$RETRO_HA_ROOT/opt/retro-ha-exec"
+checkout_exec="$KIOSK_RETROPIE_ROOT/opt/kiosk-retropie-exec"
 mkdir -p "$checkout_exec/.git" "$checkout_exec/scripts"
 printf '%s\n' '#!/usr/bin/env bash' 'exit 0' >"$checkout_exec/scripts/install.sh"
 chmod +x "$checkout_exec/scripts/install.sh"
 run_allow_fail env \
-  RETRO_HA_DRY_RUN=0 \
+  KIOSK_RETROPIE_DRY_RUN=0 \
   KCOV_GETENT_HOSTS_OK=1 \
   KCOV_CURL_OK=1 \
-  RETRO_HA_REPO_URL=https://example.invalid/repo.git \
-  RETRO_HA_REPO_REF=main \
-  RETRO_HA_CHECKOUT_DIR="$checkout_exec" \
+  KIOSK_RETROPIE_REPO_URL=https://example.invalid/repo.git \
+  KIOSK_RETROPIE_REPO_REF=main \
+  KIOSK_RETROPIE_CHECKOUT_DIR="$checkout_exec" \
   PATH="$stub_bin:/usr/bin:/bin" \
   "$ROOT_DIR/scripts/bootstrap.sh"
 
-# Exercise enter-ha-mode.sh lib discovery branches.
-enter_ha_mode="$ROOT_DIR/scripts/mode/enter-ha-mode.sh"
+# Exercise enter-kiosk-mode.sh lib discovery branches.
+enter_kiosk_mode="$ROOT_DIR/scripts/mode/enter-kiosk-mode.sh"
 
 # Prefer SCRIPT_DIR/lib (create temporary symlink scripts/mode/lib -> ../lib).
-enter_ha_mode_lib="$ROOT_DIR/scripts/mode/lib"
-if [[ ! -e "$enter_ha_mode_lib" ]]; then
-  ln -s "../lib" "$enter_ha_mode_lib"
-  run_allow_fail env PATH="$stub_bin:/usr/bin:/bin" "$enter_ha_mode"
-  rm -f "$enter_ha_mode_lib"
+enter_kiosk_mode_lib="$ROOT_DIR/scripts/mode/lib"
+if [[ ! -e "$enter_kiosk_mode_lib" ]]; then
+  ln -s "../lib" "$enter_kiosk_mode_lib"
+  run_allow_fail env PATH="$stub_bin:/usr/bin:/bin" "$enter_kiosk_mode"
+  rm -f "$enter_kiosk_mode_lib"
 fi
 
 # Normal path (SCRIPT_DIR/../lib).
-run_allow_fail env PATH="$stub_bin:/usr/bin:/bin" "$enter_ha_mode"
+run_allow_fail env PATH="$stub_bin:/usr/bin:/bin" "$enter_kiosk_mode"
 
 # Missing scripts/lib path.
-hidden_enter_ha_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_enter_ha"
-mv "$ROOT_DIR/scripts/lib" "$hidden_enter_ha_lib" 2>/dev/null || true
-run_allow_fail "$enter_ha_mode"
-mv "$hidden_enter_ha_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
+hidden_enter_kiosk_lib="$ROOT_DIR/scripts/lib.__kcov_hidden_for_enter_kiosk"
+mv "$ROOT_DIR/scripts/lib" "$hidden_enter_kiosk_lib" 2>/dev/null || true
+run_allow_fail "$enter_kiosk_mode"
+mv "$hidden_enter_kiosk_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
 
 # Sourced bootstrap should not run main.
 (
@@ -1736,15 +1736,15 @@ mv "$hidden_enter_ha_lib" "$ROOT_DIR/scripts/lib" 2>/dev/null || true
 ) || true
 
 # Exercise install.sh branches.
-export RETRO_HA_ALLOW_NON_ROOT=1
-export RETRO_HA_DRY_RUN=1
-export RETRO_HA_INSTALLED_MARKER="$RETRO_HA_ROOT/var/lib/retro-ha/installed"
+export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
+export KIOSK_RETROPIE_DRY_RUN=1
+export KIOSK_RETROPIE_INSTALLED_MARKER="$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie/installed"
 
 # Marker present early-exit.
-: >"$RETRO_HA_INSTALLED_MARKER"
+: >"$KIOSK_RETROPIE_INSTALLED_MARKER"
 run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
   "$ROOT_DIR/scripts/install.sh"
-rm -f "$RETRO_HA_INSTALLED_MARKER"
+rm -f "$KIOSK_RETROPIE_INSTALLED_MARKER"
 
 # Lock contention.
 run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=fail \
@@ -1753,7 +1753,7 @@ run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MOD
 # Marker appears while waiting for lock.
 run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=create_marker \
   "$ROOT_DIR/scripts/install.sh"
-rm -f "$RETRO_HA_INSTALLED_MARKER"
+rm -f "$KIOSK_RETROPIE_INSTALLED_MARKER"
 
 # Full-ish dry-run with different apt-cache outcomes and user present/missing.
 run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=browser KCOV_FLOCK_MODE=ok \
@@ -1761,17 +1761,17 @@ run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=browser KCOV_FLOCK_
 run_allow_fail env KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=chromium KCOV_FLOCK_MODE=ok \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
 run_allow_fail env KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
-  RETRO_HA_INSTALL_RETROPIE=1 \
+  KIOSK_RETROPIE_INSTALL_RETROPIE=1 \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
 
 # Non-dry-run marker write (covers the date > "$MARKER_FILE" line).
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=1 RETRO_HA_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
 
 # Require-root failure branch.
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
-  RETRO_HA_EUID_OVERRIDE=1000 PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
+  KIOSK_RETROPIE_EUID_OVERRIDE=1000 PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
 
 # Require-root success branch.
-run_allow_fail env RETRO_HA_ALLOW_NON_ROOT=0 RETRO_HA_EUID_OVERRIDE=0 RETRO_HA_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
+run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=0 KIOSK_RETROPIE_EUID_OVERRIDE=0 KIOSK_RETROPIE_DRY_RUN=1 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"

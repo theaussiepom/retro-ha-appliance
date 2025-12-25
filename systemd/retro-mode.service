@@ -1,11 +1,11 @@
 [Unit]
 Description=RetroPie mode
 After=network-online.target
-Conflicts=ha-kiosk.service
+Conflicts=kiosk.service
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/retro-ha/config.env
+EnvironmentFile=-/etc/kiosk-retropie/config.env
 User=retropi
 Group=retropi
 
@@ -17,9 +17,9 @@ TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
 
-ExecStart=/usr/local/lib/retro-ha/retro-mode.sh
-# When RetroPie exits, return to HA by default.
-ExecStopPost=/bin/systemctl start ha-kiosk.service
+ExecStart=/usr/local/lib/kiosk-retropie/retro-mode.sh
+# When RetroPie exits, return to kiosk by default.
+ExecStopPost=/bin/systemctl start kiosk.service
 Restart=on-failure
 RestartSec=2
 

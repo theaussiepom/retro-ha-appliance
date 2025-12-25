@@ -16,7 +16,7 @@ if [[ -d "$SCRIPT_DIR/lib" ]]; then
 elif [[ -d "$SCRIPT_DIR/../lib" ]]; then
   LIB_DIR="$SCRIPT_DIR/../lib"
 else
-  echo "retro-ha bootstrap [error]: unable to locate scripts/lib" >&2
+  echo "kiosk-retropie bootstrap [error]: unable to locate scripts/lib" >&2
   exit 1
 fi
 
@@ -33,10 +33,10 @@ network_ok() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retro-ha bootstrap"
+  export KIOSK_RETROPIE_LOG_PREFIX="kiosk-retropie bootstrap"
 
   local installed_marker
-  installed_marker="${RETRO_HA_INSTALLED_MARKER:-$(retro_ha_path /var/lib/retro-ha/installed)}"
+  installed_marker="${KIOSK_RETROPIE_INSTALLED_MARKER:-$(kiosk_retropie_path /var/lib/kiosk-retropie/installed)}"
 
   if [[ -f "$installed_marker" ]]; then
     cover_path "bootstrap:installed-marker"
@@ -55,19 +55,19 @@ main() {
   fi
   cover_path "bootstrap:network-ok"
 
-  local repo_url="${RETRO_HA_REPO_URL:-}"
-  local repo_ref="${RETRO_HA_REPO_REF:-}"
+  local repo_url="${KIOSK_RETROPIE_REPO_URL:-}"
+  local repo_ref="${KIOSK_RETROPIE_REPO_REF:-}"
 
   if [[ -z "$repo_url" ]]; then
     cover_path "bootstrap:missing-repo-url"
-    die "RETRO_HA_REPO_URL is required (set in /etc/retro-ha/config.env)"
+    die "KIOSK_RETROPIE_REPO_URL is required (set in /etc/kiosk-retropie/config.env)"
   fi
   if [[ -z "$repo_ref" ]]; then
     cover_path "bootstrap:missing-repo-ref"
-    die "RETRO_HA_REPO_REF is required (branch/tag/commit)"
+    die "KIOSK_RETROPIE_REPO_REF is required (branch/tag/commit)"
   fi
 
-  local checkout_dir="${RETRO_HA_CHECKOUT_DIR:-$(retro_ha_path /opt/retro-ha-appliance)}"
+  local checkout_dir="${KIOSK_RETROPIE_CHECKOUT_DIR:-$(kiosk_retropie_path /opt/kiosk-retropie)}"
 
   if [[ ! -d "$checkout_dir/.git" ]]; then
     cover_path "bootstrap:clone"
@@ -88,7 +88,7 @@ main() {
   fi
 
   log "Running installer"
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "bootstrap:installer-dry-run"
     record_call "exec $checkout_dir/scripts/install.sh"
     exit 0

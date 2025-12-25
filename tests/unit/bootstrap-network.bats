@@ -2,27 +2,27 @@
 
 # shellcheck disable=SC1090,SC1091
 
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-support/load"
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-assert/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-support/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-assert/load"
 
 setup() {
-  export RETRO_HA_ROOT
-  RETRO_HA_ROOT="$(mktemp -d)"
+  export KIOSK_RETROPIE_ROOT
+  KIOSK_RETROPIE_ROOT="$(mktemp -d)"
 
-  export RETRO_HA_CALLS_FILE
-  RETRO_HA_CALLS_FILE="${RETRO_HA_ROOT}/calls.txt"
+  export KIOSK_RETROPIE_CALLS_FILE
+  KIOSK_RETROPIE_CALLS_FILE="${KIOSK_RETROPIE_ROOT}/calls.txt"
 
   local old_path="$PATH"
   export _OLD_PATH="$old_path"
-  PATH="${RETRO_HA_REPO_ROOT}/tests/stubs:$PATH"
+  PATH="${KIOSK_RETROPIE_REPO_ROOT}/tests/stubs:$PATH"
 
   # Source script under test (guarded main).
-  source "${RETRO_HA_REPO_ROOT}/scripts/bootstrap.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/bootstrap.sh"
 }
 
 test_teardown() {
   PATH="${_OLD_PATH}"
-  rm -rf "${RETRO_HA_ROOT}" || true
+  rm -rf "${KIOSK_RETROPIE_ROOT}" || true
 }
 
 @test "network_ok succeeds when getent and curl succeed" {
@@ -32,7 +32,7 @@ test_teardown() {
   run network_ok
   assert_success
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output --partial "getent"
   assert_output --partial "github.com"
@@ -47,7 +47,7 @@ test_teardown() {
   run network_ok
   assert_failure
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output --partial "getent"
   assert_output --partial "github.com"
@@ -61,7 +61,7 @@ test_teardown() {
   run network_ok
   assert_failure
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output --partial "getent"
   assert_output --partial "github.com"

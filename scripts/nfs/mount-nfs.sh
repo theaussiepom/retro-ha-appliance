@@ -19,12 +19,12 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 main() {
-  export RETRO_HA_LOG_PREFIX="mount-nfs"
+  export KIOSK_RETROPIE_LOG_PREFIX="mount-nfs"
 
   local server="${NFS_SERVER:-}"
   local export_path="${NFS_PATH:-}"
-  local mount_point="${RETRO_HA_NFS_MOUNT_POINT:-$(retro_ha_path /mnt/retro-ha-roms)}"
-  local mount_opts="${RETRO_HA_NFS_MOUNT_OPTIONS:-ro}"
+  local mount_point="${KIOSK_RETROPIE_NFS_MOUNT_POINT:-$(kiosk_retropie_path /mnt/kiosk-retropie-roms)}"
+  local mount_opts="${KIOSK_RETROPIE_NFS_MOUNT_OPTIONS:-ro}"
 
   if [[ -z "$server" || -z "$export_path" ]]; then
     cover_path "mount-nfs:not-configured"
@@ -58,6 +58,6 @@ main() {
   log "Mounted successfully"
 }
 
-if ! retro_ha_is_sourced; then
+if ! kiosk_retropie_is_sourced; then
   main "$@"
 fi

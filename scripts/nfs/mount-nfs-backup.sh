@@ -19,22 +19,22 @@ source "$LIB_DIR/logging.sh"
 source "$LIB_DIR/common.sh"
 
 main() {
-  export RETRO_HA_LOG_PREFIX="mount-nfs-backup"
+  export KIOSK_RETROPIE_LOG_PREFIX="mount-nfs-backup"
 
-  local enabled="${RETRO_HA_SAVE_BACKUP_ENABLED:-0}"
+  local enabled="${KIOSK_RETROPIE_SAVE_BACKUP_ENABLED:-0}"
   if [[ "$enabled" != "1" ]]; then
     cover_path "mount-nfs-backup:disabled"
     exit 0
   fi
 
-  local server="${RETRO_HA_SAVE_BACKUP_NFS_SERVER:-${NFS_SERVER:-}}"
-  local export_path="${RETRO_HA_SAVE_BACKUP_NFS_PATH:-${NFS_PATH:-}}"
-  local mount_point="${RETRO_HA_SAVE_BACKUP_DIR:-$(retro_ha_path /mnt/retro-ha-backup)}"
-  local mount_opts="${RETRO_HA_SAVE_BACKUP_NFS_MOUNT_OPTIONS:-rw}"
+  local server="${KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER:-${NFS_SERVER:-}}"
+  local export_path="${KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH:-${NFS_PATH:-}}"
+  local mount_point="${KIOSK_RETROPIE_SAVE_BACKUP_DIR:-$(kiosk_retropie_path /mnt/kiosk-retropie-backup)}"
+  local mount_opts="${KIOSK_RETROPIE_SAVE_BACKUP_NFS_MOUNT_OPTIONS:-rw}"
 
   if [[ -z "$server" || -z "$export_path" ]]; then
     cover_path "mount-nfs-backup:not-configured"
-    log "Backup NFS not configured (set RETRO_HA_SAVE_BACKUP_NFS_SERVER/PATH or NFS_SERVER/NFS_PATH); skipping"
+    log "Backup NFS not configured (set KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER/PATH or NFS_SERVER/NFS_PATH); skipping"
     exit 0
   fi
 
@@ -55,6 +55,6 @@ main() {
   cover_path "mount-nfs-backup:mount-success"
 }
 
-if ! retro_ha_is_sourced; then
+if ! kiosk_retropie_is_sourced; then
   main "$@"
 fi

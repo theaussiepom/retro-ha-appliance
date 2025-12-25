@@ -8,7 +8,7 @@ SHELL := /usr/bin/env bash
 	ci
 
 DOCKER ?= docker
-DEVCONTAINER_IMAGE ?= retro-ha-devcontainer:local
+DEVCONTAINER_IMAGE ?= kiosk-retropie-devcontainer:local
 DEVCONTAINER_DOCKERFILE ?= .devcontainer/Dockerfile
 DEVCONTAINER_CONTEXT ?= .
 DEVCONTAINER_WORKDIR ?= /work

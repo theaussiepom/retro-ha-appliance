@@ -1,0 +1,14 @@
+[Unit]
+Description=Controller listener active during kiosk mode
+After=kiosk.service
+Requires=kiosk.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/controller-listener-kiosk-mode.sh
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=kiosk.service

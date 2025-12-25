@@ -10,12 +10,12 @@ source "$SCRIPT_DIR/lib/common.sh"
 # shellcheck source=scripts/lib/config.sh
 source "$SCRIPT_DIR/lib/config.sh"
 
-MARKER_FILE="${RETRO_HA_INSTALLED_MARKER:-$(retro_ha_path /var/lib/retro-ha/installed)}"
-LOCK_FILE="${RETRO_HA_INSTALL_LOCK:-$(retro_ha_path /var/lock/retro-ha-install.lock)}"
+MARKER_FILE="${KIOSK_RETROPIE_INSTALLED_MARKER:-$(kiosk_retropie_path /var/lib/kiosk-retropie/installed)}"
+LOCK_FILE="${KIOSK_RETROPIE_INSTALL_LOCK:-$(kiosk_retropie_path /var/lock/kiosk-retropie-install.lock)}"
 
 log() {
-  # Backwards-compat wrapper (prefer scripts/lib/logging.sh).
-  echo "retro-ha install: $*" >&2
+  # Wrapper (prefer scripts/lib/logging.sh).
+  echo "kiosk-retropie install: $*" >&2
 }
 
 die() {
@@ -24,11 +24,11 @@ die() {
 }
 
 require_root() {
-  if [[ "${RETRO_HA_ALLOW_NON_ROOT:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_ALLOW_NON_ROOT:-0}" == "1" ]]; then
     cover_path "install:allow-non-root"
     return 0
   fi
-  local effective_uid="${RETRO_HA_EUID_OVERRIDE:-${EUID:-$(id -u)}}"
+  local effective_uid="${KIOSK_RETROPIE_EUID_OVERRIDE:-${EUID:-$(id -u)}}"
   if [[ "$effective_uid" -ne 0 ]]; then
     cover_path "install:root-required"
     die "Must run as root"
@@ -92,10 +92,10 @@ install_files() {
   local lib_dir
   local bin_dir
   local systemd_dir
-  etc_dir="$(retro_ha_path /etc/retro-ha)"
-  lib_dir="${RETRO_HA_LIBDIR:-$(retro_ha_path /usr/local/lib/retro-ha)}"
-  bin_dir="${RETRO_HA_BINDIR:-$(retro_ha_path /usr/local/bin)}"
-  systemd_dir="${RETRO_HA_SYSTEMD_DIR:-$(retro_ha_path /etc/systemd/system)}"
+  etc_dir="$(kiosk_retropie_path /etc/kiosk-retropie)"
+  lib_dir="${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}"
+  bin_dir="${KIOSK_RETROPIE_BINDIR:-$(kiosk_retropie_path /usr/local/bin)}"
+  systemd_dir="${KIOSK_RETROPIE_SYSTEMD_DIR:-$(kiosk_retropie_path /etc/systemd/system)}"
 
   run_cmd mkdir -p "$etc_dir"
   run_cmd mkdir -p "$lib_dir"
@@ -125,23 +125,23 @@ install_files() {
   # Install scripts (only those that exist today).
   if [[ -d "$repo_root/scripts/leds" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/leds/ledctl.sh" "$lib_dir/ledctl.sh"
-    run_cmd install -m 0755 "$repo_root/scripts/leds/led-mqtt.sh" "$lib_dir/retro-ha-led-mqtt.sh"
-    run_cmd ln -sf "$lib_dir/retro-ha-led-mqtt.sh" "$bin_dir/retro-ha-led-mqtt.sh"
+    run_cmd install -m 0755 "$repo_root/scripts/leds/led-mqtt.sh" "$lib_dir/kiosk-retropie-led-mqtt.sh"
+    run_cmd ln -sf "$lib_dir/kiosk-retropie-led-mqtt.sh" "$bin_dir/kiosk-retropie-led-mqtt.sh"
   fi
 
   if [[ -d "$repo_root/scripts/screen" ]]; then
-    run_cmd install -m 0755 "$repo_root/scripts/screen/screen-brightness-mqtt.sh" "$lib_dir/retro-ha-screen-brightness-mqtt.sh"
-    run_cmd ln -sf "$lib_dir/retro-ha-screen-brightness-mqtt.sh" "$bin_dir/retro-ha-screen-brightness-mqtt.sh"
+    run_cmd install -m 0755 "$repo_root/scripts/screen/screen-brightness-mqtt.sh" "$lib_dir/kiosk-retropie-screen-brightness-mqtt.sh"
+    run_cmd ln -sf "$lib_dir/kiosk-retropie-screen-brightness-mqtt.sh" "$bin_dir/kiosk-retropie-screen-brightness-mqtt.sh"
   fi
 
-  if [[ -f "$repo_root/scripts/mode/ha-kiosk.sh" ]]; then
-    run_cmd install -m 0755 "$repo_root/scripts/mode/ha-kiosk.sh" "$lib_dir/ha-kiosk.sh"
+  if [[ -f "$repo_root/scripts/mode/kiosk.sh" ]]; then
+    run_cmd install -m 0755 "$repo_root/scripts/mode/kiosk.sh" "$lib_dir/kiosk.sh"
   fi
   if [[ -f "$repo_root/scripts/mode/retro-mode.sh" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/mode/retro-mode.sh" "$lib_dir/retro-mode.sh"
   fi
-  if [[ -f "$repo_root/scripts/mode/enter-ha-mode.sh" ]]; then
-    run_cmd install -m 0755 "$repo_root/scripts/mode/enter-ha-mode.sh" "$lib_dir/enter-ha-mode.sh"
+  if [[ -f "$repo_root/scripts/mode/enter-kiosk-mode.sh" ]]; then
+    run_cmd install -m 0755 "$repo_root/scripts/mode/enter-kiosk-mode.sh" "$lib_dir/enter-kiosk-mode.sh"
   fi
   if [[ -f "$repo_root/scripts/mode/enter-retro-mode.sh" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/mode/enter-retro-mode.sh" "$lib_dir/enter-retro-mode.sh"
@@ -150,12 +150,12 @@ install_files() {
   if [[ -f "$repo_root/scripts/input/controller-listener-tty.sh" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/input/controller-listener-tty.sh" "$lib_dir/controller-listener-tty.sh"
   fi
-  if [[ -f "$repo_root/scripts/input/controller-listener-ha-mode.sh" ]]; then
-    run_cmd install -m 0755 "$repo_root/scripts/input/controller-listener-ha-mode.sh" "$lib_dir/controller-listener-ha-mode.sh"
+  if [[ -f "$repo_root/scripts/input/controller-listener-kiosk-mode.sh" ]]; then
+    run_cmd install -m 0755 "$repo_root/scripts/input/controller-listener-kiosk-mode.sh" "$lib_dir/controller-listener-kiosk-mode.sh"
   fi
   if [[ -f "$repo_root/scripts/input/controller-codes.sh" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/input/controller-codes.sh" "$lib_dir/controller-codes.sh"
-    run_cmd ln -sf "$lib_dir/controller-codes.sh" "$bin_dir/retro-ha-controller-codes.sh"
+    run_cmd ln -sf "$lib_dir/controller-codes.sh" "$bin_dir/kiosk-retropie-controller-codes.sh"
   fi
   if [[ -f "$repo_root/scripts/healthcheck.sh" ]]; then
     run_cmd install -m 0755 "$repo_root/scripts/healthcheck.sh" "$lib_dir/healthcheck.sh"
@@ -179,42 +179,28 @@ install_files() {
     run_cmd install -m 0755 "$repo_root/scripts/retropie/configure-retropie-storage.sh" "$lib_dir/configure-retropie-storage.sh"
   fi
 
-  # Backwards-compatible symlinks (older underscore-style names).
-  run_cmd ln -sf "$lib_dir/ha-kiosk.sh" "$lib_dir/ha_kiosk.sh"
-  run_cmd ln -sf "$lib_dir/retro-mode.sh" "$lib_dir/retro_mode.sh"
-  run_cmd ln -sf "$lib_dir/enter-ha-mode.sh" "$lib_dir/enter_ha_mode.sh"
-  run_cmd ln -sf "$lib_dir/enter-retro-mode.sh" "$lib_dir/enter_retro_mode.sh"
-  run_cmd ln -sf "$lib_dir/controller-listener-tty.sh" "$lib_dir/controller_listener_tty.sh"
-  run_cmd ln -sf "$lib_dir/controller-listener-ha-mode.sh" "$lib_dir/controller_listener_ha_mode.sh"
-  run_cmd ln -sf "$lib_dir/mount-nfs.sh" "$lib_dir/mount_nfs.sh"
-  run_cmd ln -sf "$lib_dir/sync-roms.sh" "$lib_dir/sync_roms.sh"
-  run_cmd ln -sf "$lib_dir/mount-nfs-backup.sh" "$lib_dir/mount_nfs_backup.sh"
-  run_cmd ln -sf "$lib_dir/save-backup.sh" "$lib_dir/save_backup.sh"
-  run_cmd ln -sf "$lib_dir/install-retropie.sh" "$lib_dir/install_retropie.sh"
-  run_cmd ln -sf "$lib_dir/configure-retropie-storage.sh" "$lib_dir/configure_retropie_storage.sh"
-
   # Install systemd units.
-  run_cmd install -m 0644 "$repo_root/systemd/retro-ha-install.service" "$systemd_dir/retro-ha-install.service"
-  if [[ -f "$repo_root/systemd/retro-ha-led-mqtt.service" ]]; then
-    run_cmd install -m 0644 "$repo_root/systemd/retro-ha-led-mqtt.service" "$systemd_dir/retro-ha-led-mqtt.service"
+  run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-install.service" "$systemd_dir/kiosk-retropie-install.service"
+  if [[ -f "$repo_root/systemd/kiosk-retropie-led-mqtt.service" ]]; then
+    run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-led-mqtt.service" "$systemd_dir/kiosk-retropie-led-mqtt.service"
   fi
-  if [[ -f "$repo_root/systemd/retro-ha-screen-brightness-mqtt.service" ]]; then
-    run_cmd install -m 0644 "$repo_root/systemd/retro-ha-screen-brightness-mqtt.service" "$systemd_dir/retro-ha-screen-brightness-mqtt.service"
+  if [[ -f "$repo_root/systemd/kiosk-retropie-screen-brightness-mqtt.service" ]]; then
+    run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-screen-brightness-mqtt.service" "$systemd_dir/kiosk-retropie-screen-brightness-mqtt.service"
   fi
   if [[ -f "$repo_root/systemd/emergency-retro-launch.service" ]]; then
     run_cmd install -m 0644 "$repo_root/systemd/emergency-retro-launch.service" "$systemd_dir/emergency-retro-launch.service"
   fi
-  if [[ -f "$repo_root/systemd/ha-kiosk.service" ]]; then
-    run_cmd install -m 0644 "$repo_root/systemd/ha-kiosk.service" "$systemd_dir/ha-kiosk.service"
+  if [[ -f "$repo_root/systemd/kiosk.service" ]]; then
+    run_cmd install -m 0644 "$repo_root/systemd/kiosk.service" "$systemd_dir/kiosk.service"
   fi
   if [[ -f "$repo_root/systemd/retro-mode.service" ]]; then
     run_cmd install -m 0644 "$repo_root/systemd/retro-mode.service" "$systemd_dir/retro-mode.service"
   fi
-  if [[ -f "$repo_root/systemd/ha-mode-controller-listener.service" ]]; then
-    run_cmd install -m 0644 "$repo_root/systemd/ha-mode-controller-listener.service" "$systemd_dir/ha-mode-controller-listener.service"
+  if [[ -f "$repo_root/systemd/kiosk-mode-controller-listener.service" ]]; then
+    run_cmd install -m 0644 "$repo_root/systemd/kiosk-mode-controller-listener.service" "$systemd_dir/kiosk-mode-controller-listener.service"
   fi
-  if [[ -f "$repo_root/systemd/retro-ha-failover.service" ]]; then
-    run_cmd install -m 0644 "$repo_root/systemd/retro-ha-failover.service" "$systemd_dir/retro-ha-failover.service"
+  if [[ -f "$repo_root/systemd/kiosk-retropie-failover.service" ]]; then
+    run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-failover.service" "$systemd_dir/kiosk-retropie-failover.service"
   fi
   if [[ -f "$repo_root/systemd/boot-sync.service" ]]; then
     run_cmd install -m 0644 "$repo_root/systemd/boot-sync.service" "$systemd_dir/boot-sync.service"
@@ -239,16 +225,16 @@ enable_services() {
   # Always enable the emergency listener.
   run_cmd systemctl enable emergency-retro-launch.service > /dev/null 2>&1 || true
 
-  # Default to HA kiosk on boot; Retro mode is started on-demand.
-  run_cmd systemctl enable ha-kiosk.service > /dev/null 2>&1 || true
-  run_cmd systemctl enable ha-mode-controller-listener.service > /dev/null 2>&1 || true
+  # Default to kiosk on boot; Retro mode is started on-demand.
+  run_cmd systemctl enable kiosk.service > /dev/null 2>&1 || true
+  run_cmd systemctl enable kiosk-mode-controller-listener.service > /dev/null 2>&1 || true
 
   # Optional ROM sync (Pattern A). Script is a no-op unless configured.
   run_cmd systemctl enable boot-sync.service > /dev/null 2>&1 || true
 
   # Optional components.
-  run_cmd systemctl enable retro-ha-led-mqtt.service > /dev/null 2>&1 || true
-  run_cmd systemctl enable retro-ha-screen-brightness-mqtt.service > /dev/null 2>&1 || true
+  run_cmd systemctl enable kiosk-retropie-led-mqtt.service > /dev/null 2>&1 || true
+  run_cmd systemctl enable kiosk-retropie-screen-brightness-mqtt.service > /dev/null 2>&1 || true
 
   # Fail-open safety net (periodic).
   run_cmd systemctl enable healthcheck.timer > /dev/null 2>&1 || true
@@ -259,7 +245,7 @@ enable_services() {
 
 write_marker() {
   run_cmd mkdir -p "$(dirname "$MARKER_FILE")"
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "install:write-marker-dry-run"
     record_call "write_marker $MARKER_FILE"
     return 0
@@ -271,7 +257,7 @@ write_marker() {
 main() {
   require_root
   load_config_env
-  export RETRO_HA_LOG_PREFIX="retro-ha install"
+  export KIOSK_RETROPIE_LOG_PREFIX="kiosk-retropie install"
 
   if [[ -f "$MARKER_FILE" ]]; then
     cover_path "install:marker-present-early"
@@ -302,16 +288,16 @@ main() {
   log "Installing files"
   install_files
 
-  if [[ "${RETRO_HA_INSTALL_RETROPIE:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_INSTALL_RETROPIE:-0}" == "1" ]]; then
     cover_path "install:optional-retropie-enabled"
     log "Installing RetroPie (optional)"
-    run_cmd "${RETRO_HA_LIBDIR:-$(retro_ha_path /usr/local/lib/retro-ha)}/install-retropie.sh" || log "RetroPie install failed (continuing)"
+    run_cmd "${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}/install-retropie.sh" || log "RetroPie install failed (continuing)"
   else
     cover_path "install:optional-retropie-disabled"
   fi
 
   log "Configuring RetroPie storage (local saves)"
-  run_cmd "${RETRO_HA_LIBDIR:-$(retro_ha_path /usr/local/lib/retro-ha)}/configure-retropie-storage.sh" || log "Storage configuration failed (continuing)"
+  run_cmd "${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}/configure-retropie-storage.sh" || log "Storage configuration failed (continuing)"
 
   log "Enabling services"
   enable_services

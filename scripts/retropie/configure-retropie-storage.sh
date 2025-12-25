@@ -21,10 +21,10 @@ source "$LIB_DIR/common.sh"
 source "$LIB_DIR/path.sh"
 
 require_root() {
-  if [[ "${RETRO_HA_ALLOW_NON_ROOT:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_ALLOW_NON_ROOT:-0}" == "1" ]]; then
     return 0
   fi
-  local effective_uid="${RETRO_HA_EUID_OVERRIDE:-${EUID:-$(id -u)}}"
+  local effective_uid="${KIOSK_RETROPIE_EUID_OVERRIDE:-${EUID:-$(id -u)}}"
   if [[ "$effective_uid" -ne 0 ]]; then
     die "Must run as root"
   fi
@@ -47,7 +47,7 @@ ensure_kv_line() {
     cat "$file" > "$tmp"
     echo "${key} = \"${value}\"" >> "$tmp"
   fi
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "retropie-storage:dry-run"
     record_call "write_kv ${file} ${key}"
     run_cmd rm -f "$tmp"
@@ -57,7 +57,7 @@ ensure_kv_line() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retropie-storage"
+  export KIOSK_RETROPIE_LOG_PREFIX="retropie-storage"
 
   require_root
 
@@ -66,28 +66,28 @@ main() {
   home_dir="$(getent passwd "$user" | cut -d: -f6 || true)"
   [[ -n "$home_dir" ]] || die "Unable to resolve home directory for $user"
 
-  local roms_dir="${RETRO_HA_ROMS_DIR:-$(retro_ha_path /var/lib/retro-ha/retropie/roms)}"
-  local saves_dir="${RETRO_HA_SAVES_DIR:-$(retro_ha_path /var/lib/retro-ha/retropie/saves)}"
-  local states_dir="${RETRO_HA_STATES_DIR:-$(retro_ha_path /var/lib/retro-ha/retropie/states)}"
-  local nfs_mount_point="${RETRO_HA_NFS_MOUNT_POINT:-$(retro_ha_path /mnt/retro-ha-roms)}"
+  local roms_dir="${KIOSK_RETROPIE_ROMS_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/roms)}"
+  local saves_dir="${KIOSK_RETROPIE_SAVES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/saves)}"
+  local states_dir="${KIOSK_RETROPIE_STATES_DIR:-$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie/states)}"
+  local nfs_mount_point="${KIOSK_RETROPIE_NFS_MOUNT_POINT:-$(kiosk_retropie_path /mnt/kiosk-retropie-roms)}"
 
   # Guardrail: never allow ROMs or saves to live under the NFS mount.
-  if retro_ha_path_is_under "$nfs_mount_point" "$roms_dir"; then
-    die "RETRO_HA_ROMS_DIR must be local (not under $nfs_mount_point): $roms_dir"
+  if kiosk_retropie_path_is_under "$nfs_mount_point" "$roms_dir"; then
+    die "KIOSK_RETROPIE_ROMS_DIR must be local (not under $nfs_mount_point): $roms_dir"
   fi
-  if retro_ha_path_is_under "$nfs_mount_point" "$saves_dir"; then
-    die "RETRO_HA_SAVES_DIR must be local (not under $nfs_mount_point): $saves_dir"
+  if kiosk_retropie_path_is_under "$nfs_mount_point" "$saves_dir"; then
+    die "KIOSK_RETROPIE_SAVES_DIR must be local (not under $nfs_mount_point): $saves_dir"
   fi
-  if retro_ha_path_is_under "$nfs_mount_point" "$states_dir"; then
-    die "RETRO_HA_STATES_DIR must be local (not under $nfs_mount_point): $states_dir"
+  if kiosk_retropie_path_is_under "$nfs_mount_point" "$states_dir"; then
+    die "KIOSK_RETROPIE_STATES_DIR must be local (not under $nfs_mount_point): $states_dir"
   fi
 
   run_cmd mkdir -p "$roms_dir" "$saves_dir" "$states_dir"
-  run_cmd chown -R "$user:$user" "$(retro_ha_path /var/lib/retro-ha/retropie)" || true
+  run_cmd chown -R "$user:$user" "$(kiosk_retropie_path /var/lib/kiosk-retropie/retropie)" || true
 
   # Back-compat: keep the old default path working if anything references it.
-  if [[ ! -e "$(retro_ha_path /var/lib/retro-ha/roms)" ]]; then
-    run_cmd ln -s "$roms_dir" "$(retro_ha_path /var/lib/retro-ha/roms)"
+  if [[ ! -e "$(kiosk_retropie_path /var/lib/kiosk-retropie/roms)" ]]; then
+    run_cmd ln -s "$roms_dir" "$(kiosk_retropie_path /var/lib/kiosk-retropie/roms)"
   fi
 
   # Point RetroPie ROMs directory at our local ROM store.
@@ -108,7 +108,7 @@ main() {
 
   # Configure RetroArch save/state paths if RetroPie is installed.
   local retroarch_cfg
-  retroarch_cfg="$(retro_ha_path /opt/retropie/configs/all/retroarch.cfg)"
+  retroarch_cfg="$(kiosk_retropie_path /opt/retropie/configs/all/retroarch.cfg)"
   if [[ -f "$retroarch_cfg" ]]; then
     cover_path "retropie-storage:retroarch-present"
     log "Configuring RetroArch save/state dirs"

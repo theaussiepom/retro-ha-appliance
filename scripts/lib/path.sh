@@ -3,23 +3,23 @@ set -euo pipefail
 
 # Path guard helpers.
 
-retro_ha_realpath_norm() {
+kiosk_retropie_realpath_norm() {
   # Normalize a path like `realpath -m`.
   # - Does not require the path to exist.
   # - Does not resolve symlinks.
-  retro_ha_realpath_m "$1"
+  kiosk_retropie_realpath_m "$1"
 }
 
-retro_ha_path_is_under() {
+kiosk_retropie_path_is_under() {
   # Returns 0 if candidate is equal to base or strictly under base.
-  # Both paths are normalized with retro_ha_realpath_m.
+  # Both paths are normalized with kiosk_retropie_realpath_m.
   local base_raw="$1"
   local candidate_raw="$2"
 
   local base
-  base="$(retro_ha_realpath_norm "$base_raw")"
+  base="$(kiosk_retropie_realpath_norm "$base_raw")"
   local candidate
-  candidate="$(retro_ha_realpath_norm "$candidate_raw")"
+  candidate="$(kiosk_retropie_realpath_norm "$candidate_raw")"
 
   if [[ "$candidate" == "$base" ]]; then
     if declare -F cover_path > /dev/null 2>&1; then

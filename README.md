@@ -1,4 +1,4 @@
-# retro-ha-appliance
+# kiosk-retropie
 
 ## Quick start (dev + CI)
 
@@ -7,7 +7,7 @@ The canonical, repeatable test environment is the devcontainer.
 Build the devcontainer image:
 
 ```bash
-docker build -t retro-ha-devcontainer -f .devcontainer/Dockerfile .
+docker build -t kiosk-retropie-devcontainer -f .devcontainer/Dockerfile .
 ```
 
 Run the full CI pipeline inside it:
@@ -16,7 +16,7 @@ Run the full CI pipeline inside it:
 docker run --rm \
   -v "$PWD:/work" \
   -w /work \
-  retro-ha-devcontainer \
+  kiosk-retropie-devcontainer \
   bash -lc './scripts/ci.sh'
 ```
 
@@ -30,17 +30,17 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the required pre-PR checks.
 
 This repo turns a Raspberry Pi into a dual-mode appliance with strict display ownership:
 
-- Home Assistant kiosk mode (default): full-screen Chromium
+- Kiosk mode (default): full-screen Chromium
 - RetroPie mode (on-demand): launched by controller input
 
 The focus is determinism, recoverability, and fail-open behavior.
-If the HA kiosk isn’t healthy, you can still get into RetroPie.
+If the kiosk isn’t healthy, you can still get into RetroPie.
 
 ## How it works (plain English)
 
 Think of this as a “single-screen appliance” that can only show one thing at a time.
 
-- Most of the time the Pi is a Home Assistant kiosk (full-screen Chromium).
+- Most of the time the Pi is a kiosk (full-screen Chromium).
 - When you press Start on a controller, the Pi stops the kiosk and switches into RetroPie.
 - If the kiosk crashes, the Pi tries to recover into RetroPie automatically (so the screen isn’t just dead).
 
@@ -51,10 +51,10 @@ good at doing exactly that reliably.
 
 ```mermaid
 flowchart TD
-  HA["ha-kiosk.service<br/>Chromium kiosk"] -->|Start button| RETRO["retro-mode.service<br/>RetroPie"]
-  RETRO -->|manual start| HA
+  KIOSK["kiosk.service<br/>Chromium kiosk"] -->|Start button| RETRO["retro-mode.service<br/>RetroPie"]
+  RETRO -->|manual start| KIOSK
 
-  HA -. crashes .-> FAIL[retro-ha-failover.service]
+  KIOSK -. crashes .-> FAIL[kiosk-retropie-failover.service]
   FAIL --> RETRO
 ```
 
@@ -90,15 +90,15 @@ production appliance runtime.
 
 ```mermaid
 flowchart TD
-  HA[Home Assistant] -- MQTT --> LED[retro-ha-led-mqtt.service]
-  HA -- MQTT --> BRIGHT[retro-ha-screen-brightness-mqtt.service]
+  CLIENT[MQTT client] -- MQTT --> LED[kiosk-retropie-led-mqtt.service]
+  CLIENT -- MQTT --> BRIGHT[kiosk-retropie-screen-brightness-mqtt.service]
 
   LED --> SYSLED[/sysfs LEDs/]
   BRIGHT --> SYSBL[/sysfs backlight/]
 
   SYSTEMD[systemd] --> LED
   SYSTEMD --> BRIGHT
-  SYSTEMD --> KIOSK[ha-kiosk.service]
+  SYSTEMD --> KIOSK[kiosk.service]
   SYSTEMD --> RETRO[retro-mode.service]
 ```
 
@@ -118,9 +118,9 @@ flowchart TD
 1. Fill in at least:
 
 ```bash
-RETRO_HA_REPO_URL=...
-RETRO_HA_REPO_REF=<tag-or-commit>
-HA_URL=<your-home-assistant-dashboard-url>
+KIOSK_RETROPIE_REPO_URL=...
+KIOSK_RETROPIE_REPO_REF=<tag-or-commit>
+KIOSK_URL=<your-home-assistant-dashboard-url>
 ```
 
 1. Boot the Pi.
@@ -128,8 +128,8 @@ HA_URL=<your-home-assistant-dashboard-url>
 Verify installation:
 
 ```bash
-systemctl status retro-ha-install.service --no-pager
-ls -l /var/lib/retro-ha/installed || true
+systemctl status kiosk-retropie-install.service --no-pager
+ls -l /var/lib/kiosk-retropie/installed || true
 ```
 
 ### Manual install (no cloud-init)
@@ -143,25 +143,25 @@ sudo apt-get update
 sudo apt-get install -y --no-install-recommends ca-certificates curl git
 ```
 
-1. Create `/etc/retro-ha/config.env` (start from the example):
+1. Create `/etc/kiosk-retropie/config.env` (start from the example):
 
 ```bash
-sudo mkdir -p /etc/retro-ha
-sudo cp /path/to/retro-ha-appliance/examples/config.env.example /etc/retro-ha/config.env
-sudo nano /etc/retro-ha/config.env
+sudo mkdir -p /etc/kiosk-retropie
+sudo cp /path/to/kiosk-retropie/examples/config.env.example /etc/kiosk-retropie/config.env
+sudo nano /etc/kiosk-retropie/config.env
 ```
 
 1. Clone the repo and run the installer as root:
 
 ```bash
-git clone https://github.com/theaussiepom/retro-ha-appliance.git /opt/retro-ha-appliance
-cd /opt/retro-ha-appliance
+git clone https://github.com/theaussiepom/kiosk-retropie.git /opt/kiosk-retropie
+cd /opt/kiosk-retropie
 sudo ./scripts/install.sh
 ```
 
 ## Configuration
 
-Runtime configuration lives in `/etc/retro-ha/config.env`.
+Runtime configuration lives in `/etc/kiosk-retropie/config.env`.
 
 Start with [examples/config.env.example](examples/config.env.example).
 
@@ -173,18 +173,18 @@ so the entry/exit buttons are configurable.
 To discover codes on the Pi:
 
 ```bash
-sudo retro-ha-controller-codes.sh
+sudo kiosk-retropie-controller-codes.sh
 ```
 
 Press the buttons you want to use and note the `code=` values.
 
-Then set these in `/etc/retro-ha/config.env`:
+Then set these in `/etc/kiosk-retropie/config.env`:
 
-- `RETRO_HA_RETRO_ENTER_TRIGGER_CODE` (optional, default `315`): button code that enters Retro (HA -> Retro)
-- `RETRO_HA_RETRO_EXIT_TRIGGER_CODE` (optional, default `315`): button code that triggers the exit combo
-- `RETRO_HA_RETRO_EXIT_SECOND_CODE` (optional, default `304`): second button for exit combo (press this, then trigger)
-- `RETRO_HA_COMBO_WINDOW_SEC` (optional, default `0.75`): max seconds between the second button and trigger
-- `RETRO_HA_START_DEBOUNCE_SEC` (optional, default `1.0`): debounce for trigger presses
+- `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` (optional, default `315`): button code that enters Retro (kiosk -> Retro)
+- `KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE` (optional, default `315`): button code that triggers the exit combo
+- `KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE` (optional, default `304`): second button for exit combo (press this, then trigger)
+- `KIOSK_RETROPIE_COMBO_WINDOW_SEC` (optional, default `0.75`): max seconds between the second button and trigger
+- `KIOSK_RETROPIE_START_DEBOUNCE_SEC` (optional, default `1.0`): debounce for trigger presses
 
 #### On-device calibration checklist
 
@@ -192,52 +192,48 @@ Then set these in `/etc/retro-ha/config.env`:
 1. Discover the button codes:
 
     ```bash
-    sudo retro-ha-controller-codes.sh
+    sudo kiosk-retropie-controller-codes.sh
     ```
 
     Press the buttons you want to use and note the `code=` values.
 
-1. Update `/etc/retro-ha/config.env` with the codes you chose:
-    Set `RETRO_HA_RETRO_ENTER_TRIGGER_CODE` for HA -> Retro.
-  For Retro -> HA, set `RETRO_HA_RETRO_EXIT_SECOND_CODE` and `RETRO_HA_RETRO_EXIT_TRIGGER_CODE`
-  (second button first, then trigger).
+1. Update `/etc/kiosk-retropie/config.env` with the codes you chose:
+   - Set `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` for kiosk -> Retro.
+   - For Retro -> kiosk, set `KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE` and `KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE`
+     (second button first, then trigger).
 
 1. Restart the listeners so they pick up the new config:
 
     ```bash
-    sudo systemctl restart ha-mode-controller-listener.service emergency-retro-launch.service
+    sudo systemctl restart kiosk-mode-controller-listener.service emergency-retro-launch.service
     ```
 
 1. Verify behavior:
-    From HA kiosk: press your enter trigger and confirm Retro starts.
-    From Retro: press your exit combo (second button, then trigger within `RETRO_HA_COMBO_WINDOW_SEC`) and confirm HA returns.
-
-Backwards compatibility:
-
-- `RETRO_HA_START_BUTTON_CODE` (legacy) still works as the default trigger code.
-- `RETRO_HA_A_BUTTON_CODE` (legacy) still works as the default exit second code.
+   - From kiosk: press your enter trigger and confirm Retro starts.
+   - From Retro: press your exit combo (second button, then trigger within
+     `KIOSK_RETROPIE_COMBO_WINDOW_SEC`) and confirm kiosk returns.
 
 ### Repo pinning (first boot installer)
 
 The first-boot bootstrap and installer fetch this repo using:
 
-- `RETRO_HA_REPO_URL` (required)
-- `RETRO_HA_REPO_REF` (required): branch/tag/commit (pinning to a tag/commit is recommended)
-- `RETRO_HA_CHECKOUT_DIR` (optional, default: `/opt/retro-ha-appliance`)
+- `KIOSK_RETROPIE_REPO_URL` (required)
+- `KIOSK_RETROPIE_REPO_REF` (required): branch/tag/commit (pinning to a tag/commit is recommended)
+- `KIOSK_RETROPIE_CHECKOUT_DIR` (optional, default: `/opt/kiosk-retropie`)
 
 ### Display
 
-- `HA_URL` (required for kiosk): the full Home Assistant dashboard URL to open in Chromium.
-- `RETRO_HA_SCREEN_ROTATION` (optional): `normal`, `left`, `right`, or `inverted`.
+- `KIOSK_URL` (required for kiosk): the full URL to open in Chromium.
+- `KIOSK_RETROPIE_SCREEN_ROTATION` (optional): `normal`, `left`, `right`, or `inverted`.
 
 Xorg VTs (virtual terminals):
 
-- `RETRO_HA_X_VT` (optional, default: `7`): VT used by HA kiosk
-- `RETRO_HA_RETRO_X_VT` (optional, default: `8`): VT used by Retro mode
+- `KIOSK_RETROPIE_X_VT` (optional, default: `7`): VT used by kiosk
+- `KIOSK_RETROPIE_RETRO_X_VT` (optional, default: `8`): VT used by Retro mode
 
 Chromium profile directory:
 
-- `RETRO_HA_CHROMIUM_PROFILE_DIR` (optional, default: `$HOME/.config/retro-ha-chromium`)
+- `KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR` (optional, default: `$HOME/.config/kiosk-retropie-chromium`)
 
 ### ROM sync from NFS (optional)
 
@@ -250,59 +246,59 @@ Required to enable NFS sync:
 
 Optional variables:
 
-- `RETRO_HA_NFS_MOUNT_POINT` (default: `/mnt/retro-ha-roms`)
-- `RETRO_HA_NFS_MOUNT_OPTIONS` (default: `ro`)
-- `RETRO_HA_NFS_ROMS_SUBDIR` (default: empty)
-- `RETRO_HA_ROMS_DIR` (default: `/var/lib/retro-ha/retropie/roms`)
-- `RETRO_HA_ROMS_SYNC_DELETE` (default: `0`; set to `1` to mirror deletions from NFS)
-- `RETRO_HA_ROMS_OWNER` (default: `retropi:retropi`)
+- `KIOSK_RETROPIE_NFS_MOUNT_POINT` (default: `/mnt/kiosk-retropie-roms`)
+- `KIOSK_RETROPIE_NFS_MOUNT_OPTIONS` (default: `ro`)
+- `KIOSK_RETROPIE_NFS_ROMS_SUBDIR` (default: empty)
+- `KIOSK_RETROPIE_ROMS_DIR` (default: `/var/lib/kiosk-retropie/retropie/roms`)
+- `KIOSK_RETROPIE_ROMS_SYNC_DELETE` (default: `0`; set to `1` to mirror deletions from NFS)
+- `KIOSK_RETROPIE_ROMS_OWNER` (default: `retropi:retropi`)
 
 Optional system filtering:
 
-- `RETRO_HA_ROMS_SYSTEMS` (default: empty; if set, only these systems are synced)
-- `RETRO_HA_ROMS_EXCLUDE_SYSTEMS` (default: empty; systems to skip)
+- `KIOSK_RETROPIE_ROMS_SYSTEMS` (default: empty; if set, only these systems are synced)
+- `KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS` (default: empty; systems to skip)
 
 ### Save data policy
 
 Save files and save states are always local:
 
-- `RETRO_HA_SAVES_DIR` (default: `/var/lib/retro-ha/retropie/saves`)
-- `RETRO_HA_STATES_DIR` (default: `/var/lib/retro-ha/retropie/states`)
+- `KIOSK_RETROPIE_SAVES_DIR` (default: `/var/lib/kiosk-retropie/retropie/saves`)
+- `KIOSK_RETROPIE_STATES_DIR` (default: `/var/lib/kiosk-retropie/retropie/states`)
 
 ### Optional save backup to NFS
 
 An optional periodic backup copies local saves/states to NFS.
 It never runs during gameplay (it skips while `retro-mode.service` is active).
 
-- `RETRO_HA_SAVE_BACKUP_ENABLED` (default: `0`; set to `1` to enable)
-- `RETRO_HA_SAVE_BACKUP_DIR` (default: `/mnt/retro-ha-backup`)
-- `RETRO_HA_SAVE_BACKUP_SUBDIR` (default: `retro-ha-saves`)
-- `RETRO_HA_SAVE_BACKUP_DELETE` (default: `0`)
+- `KIOSK_RETROPIE_SAVE_BACKUP_ENABLED` (default: `0`; set to `1` to enable)
+- `KIOSK_RETROPIE_SAVE_BACKUP_DIR` (default: `/mnt/kiosk-retropie-backup`)
+- `KIOSK_RETROPIE_SAVE_BACKUP_SUBDIR` (default: `kiosk-retropie-saves`)
+- `KIOSK_RETROPIE_SAVE_BACKUP_DELETE` (default: `0`)
 
 NFS settings (defaults to `NFS_SERVER`/`NFS_PATH` if unset):
 
-- `RETRO_HA_SAVE_BACKUP_NFS_SERVER`
-- `RETRO_HA_SAVE_BACKUP_NFS_PATH`
-- `RETRO_HA_SAVE_BACKUP_NFS_MOUNT_OPTIONS` (default: `rw`)
+- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER`
+- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH`
+- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_MOUNT_OPTIONS` (default: `rw`)
 
 ### Controller listeners (advanced)
 
 Controller listeners prefer evdev devices under `/dev/input/by-id`.
 
-- `RETRO_HA_INPUT_BY_ID_DIR` (optional, default: `/dev/input/by-id`)
-- `RETRO_HA_START_BUTTON_CODE` (optional, default: `315`)
-- `RETRO_HA_START_DEBOUNCE_SEC` (optional, default: `1.0`)
+- `KIOSK_RETROPIE_INPUT_BY_ID_DIR` (optional, default: `/dev/input/by-id`)
+- `KIOSK_RETROPIE_START_BUTTON_CODE` (optional, default: `315`)
+- `KIOSK_RETROPIE_START_DEBOUNCE_SEC` (optional, default: `1.0`)
 
 Safety / loop limits:
 
-- `RETRO_HA_MAX_TRIGGERS` (optional; max "start" events before exiting)
-- `RETRO_HA_MAX_LOOPS` (optional; max poll loops before exiting)
+- `KIOSK_RETROPIE_MAX_TRIGGERS` (optional; max "start" events before exiting)
+- `KIOSK_RETROPIE_MAX_LOOPS` (optional; max poll loops before exiting)
 
 ### LED MQTT bridge (optional)
 
-- `RETRO_HA_LED_MQTT_ENABLED` (default: `0`; set to `1` to enable)
-- `RETRO_HA_MQTT_TOPIC_PREFIX` (default: `retro-ha`)
-- `RETRO_HA_LED_MQTT_POLL_SEC` (optional, default: `2`)
+- `KIOSK_RETROPIE_LED_MQTT_ENABLED` (default: `0`; set to `1` to enable)
+- `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
+- `KIOSK_RETROPIE_LED_MQTT_POLL_SEC` (optional, default: `2`)
   Poll sysfs and publish state changes made outside MQTT.
 
 Broker settings:
@@ -317,11 +313,11 @@ Broker settings:
 
 Controls the display backlight brightness via sysfs (`/sys/class/backlight`).
 
-- `RETRO_HA_SCREEN_BRIGHTNESS_MQTT_ENABLED` (default: `0`; set to `1` to enable)
-- `RETRO_HA_MQTT_TOPIC_PREFIX` (default: `retro-ha`)
-- `RETRO_HA_BACKLIGHT_NAME` (optional)
+- `KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED` (default: `0`; set to `1` to enable)
+- `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
+- `KIOSK_RETROPIE_BACKLIGHT_NAME` (optional)
   Which backlight device under `/sys/class/backlight` to control; defaults to the first one found.
-- `RETRO_HA_SCREEN_BRIGHTNESS_MQTT_POLL_SEC` (optional, default: `2`)
+- `KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC` (optional, default: `2`)
   Poll sysfs and publish state changes made outside MQTT.
 
 Broker settings (same as LED MQTT bridge):
@@ -332,29 +328,29 @@ Broker settings (same as LED MQTT bridge):
 - `MQTT_PASSWORD` (optional)
 - `MQTT_TLS` (default: `0`; set to `1` to enable TLS)
 
-## Home Assistant LED control (optional)
+## MQTT LED control (optional)
 
 ### MQTT integration at a glance
 
-If Home Assistant is running on a different host than the kiosk Pi, MQTT is the bridge.
+If your dashboard/controller is running on a different host than the kiosk Pi, MQTT is the bridge.
 
-This diagram shows the message flow (commands go one way, state comes back as retained messages so HA can show the
-current value immediately):
+This diagram shows the message flow (commands go one way, state comes back as retained messages so the client can
+show the current value immediately):
 
 ```mermaid
 flowchart LR
-  subgraph HA_BOX[Home Assistant]
-    HA["Home Assistant<br/>(MQTT integration)"]
+  subgraph CLIENT_BOX[MQTT client]
+    CLIENT["Dashboard/controller<br/>(MQTT)"]
   end
   BROKER[MQTT broker]
 
-  LEDSVC[retro-ha-led-mqtt.service]
-  BRISVC[retro-ha-screen-brightness-mqtt.service]
+  LEDSVC[kiosk-retropie-led-mqtt.service]
+  BRISVC[kiosk-retropie-screen-brightness-mqtt.service]
 
   SYSLED["/sysfs LEDs<br/>/sys/class/leds/.../"]
   SYSBL["/sysfs backlight<br/>/sys/class/backlight/.../"]
 
-  HA -->|"publish<br/>.../set"| BROKER
+  CLIENT -->|"publish<br/>.../set"| BROKER
   BROKER -->|"deliver<br/>.../set"| LEDSVC
   BROKER -->|"deliver<br/>.../set"| BRISVC
 
@@ -363,100 +359,100 @@ flowchart LR
 
   LEDSVC -->|"publish retained<br/>.../state"| BROKER
   BRISVC -->|"publish retained<br/>.../state"| BROKER
-  BROKER -->|"subscribe<br/>.../state"| HA
+  BROKER -->|"subscribe<br/>.../state"| CLIENT
 
   SYSLED -. external change .-> LEDSVC
   SYSBL -. external change .-> BRISVC
 ```
 
-By default the Raspberry Pi board LEDs are kept **on** as a simple “it’s alive” signal. Home Assistant can
+By default the Raspberry Pi board LEDs are kept **on** as a simple “it’s alive” signal. An MQTT client can
 turn them **off** (night mode) by driving sysfs on the appliance.
 
-If Home Assistant is running on a different host than the kiosk Pi, MQTT is the bridge: the appliance
+If your dashboard/controller is running on a different host than the kiosk Pi, MQTT is the bridge: the appliance
 exposes an **MQTT-controlled** LED switch.
 
 ### LED overview
 
-- The Pi runs `retro-ha-led-mqtt.service`.
+- The Pi runs `kiosk-retropie-led-mqtt.service`.
 - It subscribes to MQTT topics and calls a local sysfs writer.
-- Home Assistant publishes `ON`/`OFF` to those topics.
+- An MQTT client publishes `ON`/`OFF` to those topics.
 - The appliance also periodically polls sysfs and republishes retained state,
-  so Home Assistant reflects changes made outside MQTT.
+  so the client reflects changes made outside MQTT.
 
 ### LED MQTT topics
 
-Default prefix: `retro-ha` (set `RETRO_HA_MQTT_TOPIC_PREFIX`).
+Default prefix: `kiosk-retropie` (set `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`).
 
 Command topics:
 
-- `retro-ha/led/act/set`
-- `retro-ha/led/pwr/set`
-- `retro-ha/led/all/set`
+- `kiosk-retropie/led/act/set`
+- `kiosk-retropie/led/pwr/set`
+- `kiosk-retropie/led/all/set`
 
 Payloads:
 
 - `ON`
 - `OFF`
 
-State topics (retained, so Home Assistant can see the current state immediately):
+State topics (retained, so the client can see the current state immediately):
 
-- `retro-ha/led/act/state`
-- `retro-ha/led/pwr/state`
+- `kiosk-retropie/led/act/state`
+- `kiosk-retropie/led/pwr/state`
 
-### LED Home Assistant YAML example
+### LED MQTT YAML example
 
-MQTT broker settings are configured in Home Assistant’s MQTT integration.
+MQTT broker settings are configured in your MQTT client.
 
 Example switches:
 
 ```yaml
 mqtt:
   switch:
-    - name: "Retro HA ACT LED"
-      command_topic: "retro-ha/led/act/set"
-      state_topic: "retro-ha/led/act/state"
+    - name: "kiosk-retropie ACT LED"
+      command_topic: "kiosk-retropie/led/act/set"
+      state_topic: "kiosk-retropie/led/act/state"
       payload_on: "ON"
       payload_off: "OFF"
 
-    - name: "Retro HA PWR LED"
-      command_topic: "retro-ha/led/pwr/set"
-      state_topic: "retro-ha/led/pwr/state"
+    - name: "kiosk-retropie PWR LED"
+      command_topic: "kiosk-retropie/led/pwr/set"
+      state_topic: "kiosk-retropie/led/pwr/state"
       payload_on: "ON"
       payload_off: "OFF"
 
-    - name: "Retro HA LEDs (All)"
-      command_topic: "retro-ha/led/all/set"
+    - name: "kiosk-retropie LEDs (All)"
+      command_topic: "kiosk-retropie/led/all/set"
       payload_on: "ON"
       payload_off: "OFF"
 ```
 
-## Home Assistant screen brightness control (optional)
+## MQTT screen brightness control (optional)
 
 ### Screen brightness overview
 
-- The Pi runs `retro-ha-screen-brightness-mqtt.service`.
-- Home Assistant publishes brightness percent (0-100).
+- The Pi runs `kiosk-retropie-screen-brightness-mqtt.service`.
+- An MQTT client publishes brightness percent (0-100).
 - The appliance writes to `/sys/class/backlight/<device>/brightness` and publishes retained state.
 - The appliance also periodically polls sysfs and republishes retained state,
-  so Home Assistant reflects changes made outside MQTT.
+  so the client reflects changes made outside MQTT.
 
 ### Screen brightness MQTT topics
 
-Default prefix: `retro-ha` (set `RETRO_HA_MQTT_TOPIC_PREFIX`).
+Default prefix: `kiosk-retropie` (set `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`).
 
-- Command: `retro-ha/screen/brightness/set` (payload: `0`-`100`)
-- State (retained): `retro-ha/screen/brightness/state` (payload: `0`-`100`)
+- Command: `kiosk-retropie/screen/brightness/set` (payload: `0`-`100`)
+- State (retained): `kiosk-retropie/screen/brightness/state` (payload: `0`-`100`)
 
-### Screen brightness Home Assistant YAML example
+### Screen brightness MQTT YAML example
 
 Example number entity:
 
 ```yaml
 mqtt:
   number:
-    - name: "Retro HA Screen Brightness"
-      command_topic: "retro-ha/screen/brightness/set"
-      state_topic: "retro-ha/screen/brightness/state"
+    - name: "kiosk-retropie Screen Brightness"
+      command_topic: "kiosk-retropie/screen/brightness/set"
+      state_topic: "kiosk-retropie/screen/brightness/state"
       min: 0
       max: 100
       step: 1
@@ -466,9 +462,9 @@ mqtt:
 
 Key services:
 
-- `ha-kiosk.service`: HA kiosk mode (VT7 by default)
+- `kiosk.service`: kiosk mode (VT7 by default)
 - `retro-mode.service`: Retro mode (VT8 by default)
-- `ha-mode-controller-listener.service`: Start button listener during HA mode
+- `kiosk-mode-controller-listener.service`: Start button listener during kiosk mode
 - `emergency-retro-launch.service`: always-on Start button listener (TTY)
 - `healthcheck.timer`: periodic fail-open check
 
@@ -476,13 +472,13 @@ Manual mode switching:
 
 ```bash
 sudo systemctl start retro-mode.service
-sudo systemctl start ha-kiosk.service
+sudo systemctl start kiosk.service
 ```
 
 Logs:
 
 ```bash
-journalctl -u ha-kiosk.service -b --no-pager
+journalctl -u kiosk.service -b --no-pager
 journalctl -u retro-mode.service -b --no-pager
 ```
 
@@ -492,49 +488,49 @@ Most iteration does not require reflashing.
 
 ### Config-only changes
 
-1. Edit `/etc/retro-ha/config.env`.
+1. Edit `/etc/kiosk-retropie/config.env`.
 1. Restart the affected unit(s):
 
 ```bash
-sudo systemctl restart ha-kiosk.service
-sudo systemctl restart retro-ha-led-mqtt.service
+sudo systemctl restart kiosk.service
+sudo systemctl restart kiosk-retropie-led-mqtt.service
 ```
 
 ### Reinstall / update from a new git ref
 
 The installer is guarded by a marker file.
 
-1. Update your pinned ref in `/etc/retro-ha/config.env`.
+1. Update your pinned ref in `/etc/kiosk-retropie/config.env`.
 1. Stop running services (avoid fighting for X):
 
 ```bash
 sudo systemctl stop \
-  ha-kiosk.service \
+  kiosk.service \
   retro-mode.service \
-  ha-mode-controller-listener.service \
-  retro-ha-failover.service \
+  kiosk-mode-controller-listener.service \
+  kiosk-retropie-failover.service \
   || true
 ```
 
 1. Remove the marker and restart the installer:
 
 ```bash
-sudo rm -f /var/lib/retro-ha/installed /var/lock/retro-ha-install.lock
-sudo systemctl start retro-ha-install.service
+sudo rm -f /var/lib/kiosk-retropie/installed /var/lock/kiosk-retropie-install.lock
+sudo systemctl start kiosk-retropie-install.service
 ```
 
 Debug installer logs:
 
 ```bash
-journalctl -u retro-ha-install.service -b --no-pager
+journalctl -u kiosk-retropie-install.service -b --no-pager
 ```
 
 ## Troubleshooting
 
-This section focuses on diagnosing issues on a Raspberry Pi running retro-ha-appliance.
+This section focuses on diagnosing issues on a Raspberry Pi running kiosk-retropie.
 
 Most problems can be solved without reflashing by inspecting journald logs, checking systemd unit
-state, and validating `/etc/retro-ha/config.env`.
+state, and validating `/etc/kiosk-retropie/config.env`.
 
 ### Quick triage (start here)
 
@@ -542,50 +538,50 @@ state, and validating `/etc/retro-ha/config.env`.
 
 ```bash
 systemctl status \
-  retro-ha-install.service \
-  ha-kiosk.service \
+  kiosk-retropie-install.service \
+  kiosk.service \
   retro-mode.service \
-  ha-mode-controller-listener.service \
+  kiosk-mode-controller-listener.service \
   emergency-retro-launch.service \
-  retro-ha-failover.service \
+  kiosk-retropie-failover.service \
   --no-pager
 ```
 
 1. Check recent logs for the unit that is failing:
 
 ```bash
-journalctl -u retro-ha-install.service -b --no-pager
-journalctl -u ha-kiosk.service -b --no-pager
+journalctl -u kiosk-retropie-install.service -b --no-pager
+journalctl -u kiosk.service -b --no-pager
 journalctl -u retro-mode.service -b --no-pager
 ```
 
 1. Confirm configuration is present and sane:
 
 ```bash
-sudo test -f /etc/retro-ha/config.env && sudo sed -n '1,200p' /etc/retro-ha/config.env
+sudo test -f /etc/kiosk-retropie/config.env && sudo sed -n '1,200p' /etc/kiosk-retropie/config.env
 ```
 
 1. Confirm the installer marker state:
 
 ```bash
-ls -l /var/lib/retro-ha/installed || true
+ls -l /var/lib/kiosk-retropie/installed || true
 ```
 
 ### Installer problems (first boot)
 
-#### Symptom: `retro-ha-install.service` keeps retrying
+#### Symptom: `kiosk-retropie-install.service` keeps retrying
 
 Likely causes:
 
 - No network connectivity yet.
-- `RETRO_HA_REPO_URL` or `RETRO_HA_REPO_REF` missing/incorrect.
+- `KIOSK_RETROPIE_REPO_URL` or `KIOSK_RETROPIE_REPO_REF` missing/incorrect.
 - GitHub not reachable from your network.
 
 What to do:
 
 ```bash
-journalctl -u retro-ha-install.service -b --no-pager
-journalctl -u retro-ha-install.service -b -n 200 --no-pager
+journalctl -u kiosk-retropie-install.service -b --no-pager
+journalctl -u kiosk-retropie-install.service -b -n 200 --no-pager
 ```
 
 Confirm DNS and HTTPS reachability:
@@ -602,30 +598,30 @@ This is expected: the installer is guarded by a marker file.
 To force a re-run:
 
 ```bash
-sudo rm -f /var/lib/retro-ha/installed /var/lock/retro-ha-install.lock
-sudo systemctl start retro-ha-install.service
+sudo rm -f /var/lib/kiosk-retropie/installed /var/lock/kiosk-retropie-install.lock
+sudo systemctl start kiosk-retropie-install.service
 ```
 
-### HA kiosk problems
+### Kiosk problems
 
 #### Symptom: black screen / kiosk never appears
 
 Check logs:
 
 ```bash
-journalctl -u ha-kiosk.service -b --no-pager
+journalctl -u kiosk.service -b --no-pager
 ```
 
 Common causes:
 
-- `HA_URL` is missing.
+- `KIOSK_URL` is missing.
 - Chromium is not installed (package name differs by distro).
 - Xorg cannot start on the configured VT.
 
 Validate config:
 
 ```bash
-grep -n '^HA_URL=' /etc/retro-ha/config.env || true
+grep -n '^KIOSK_URL=' /etc/kiosk-retropie/config.env || true
 ```
 
 Validate chromium presence:
@@ -644,18 +640,18 @@ test -x /usr/lib/xorg/Xorg && echo "Xorg present"
 
 #### Symptom: kiosk starts then crashes repeatedly
 
-`ha-kiosk.service` is configured to fail over to Retro when it repeatedly fails.
+`kiosk.service` is configured to fail over to Retro when it repeatedly fails.
 
 Check whether failover triggered:
 
 ```bash
-systemctl status retro-ha-failover.service --no-pager
-journalctl -u retro-ha-failover.service -b --no-pager
+systemctl status kiosk-retropie-failover.service --no-pager
+journalctl -u kiosk-retropie-failover.service -b --no-pager
 ```
 
 ### Retro mode problems
 
-#### Symptom: Retro mode starts then immediately returns to HA
+#### Symptom: Retro mode starts then immediately returns to kiosk
 
 This is normal if RetroPie (EmulationStation) is not installed yet.
 `retro-mode.sh` exits 0 when `emulationstation` is missing to avoid thrashing.
@@ -687,7 +683,7 @@ If your controller only exposes legacy `/dev/input/js*` nodes, it will be ignore
 
 ```bash
 systemctl status emergency-retro-launch.service --no-pager
-systemctl status ha-mode-controller-listener.service --no-pager
+systemctl status kiosk-mode-controller-listener.service --no-pager
 ```
 
 1. Confirm the device shows up under by-id:
@@ -700,13 +696,13 @@ ls -l /dev/input/by-id/ | sed -n '1,200p'
 
 ```bash
 journalctl -u emergency-retro-launch.service -b --no-pager
-journalctl -u ha-mode-controller-listener.service -b --no-pager
+journalctl -u kiosk-mode-controller-listener.service -b --no-pager
 ```
 
 #### Symptom: controller is detected but Start button does not trigger
 
-The Start key code defaults to `315` (`BTN_START`). If your controller maps Start differently, you
-can override `RETRO_HA_START_BUTTON_CODE` in `/etc/retro-ha/config.env`.
+The enter trigger defaults to `315` (`BTN_START`). If your controller maps Start differently, you
+can override `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` in `/etc/kiosk-retropie/config.env`.
 
 If you are unsure of your key code:
 
@@ -736,14 +732,14 @@ journalctl -u boot-sync.service -b --no-pager
 1. Validate config:
 
 ```bash
-grep -n '^NFS_SERVER=\|^NFS_PATH=' /etc/retro-ha/config.env || true
+grep -n '^NFS_SERVER=\|^NFS_PATH=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Confirm mount status:
 
 ```bash
-mountpoint -q /mnt/retro-ha-roms && echo "mounted" || echo "not mounted"
-mount | grep retro-ha-roms || true
+mountpoint -q /mnt/kiosk-retropie-roms && echo "mounted" || echo "not mounted"
+mount | grep kiosk-retropie-roms || true
 ```
 
 ### Save/state backup problems (optional)
@@ -753,7 +749,7 @@ mount | grep retro-ha-roms || true
 1. Ensure it is enabled:
 
 ```bash
-grep -n '^RETRO_HA_SAVE_BACKUP_ENABLED=' /etc/retro-ha/config.env || true
+grep -n '^KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Inspect the timer and last run:
@@ -767,19 +763,19 @@ Note: the backup intentionally skips while `retro-mode.service` is active.
 
 ### LED MQTT problems (optional)
 
-#### Symptom: HA toggle does nothing
+#### Symptom: MQTT toggle does nothing
 
 1. Ensure the service is enabled and configured:
 
 ```bash
-systemctl status retro-ha-led-mqtt.service --no-pager
-grep -n '^RETRO_HA_LED_MQTT_ENABLED=\|^MQTT_HOST=' /etc/retro-ha/config.env || true
+systemctl status kiosk-retropie-led-mqtt.service --no-pager
+grep -n '^KIOSK_RETROPIE_LED_MQTT_ENABLED=\|^MQTT_HOST=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Check logs:
 
 ```bash
-journalctl -u retro-ha-led-mqtt.service -b --no-pager
+journalctl -u kiosk-retropie-led-mqtt.service -b --no-pager
 ```
 
 1. Confirm mosquitto clients are installed:
@@ -806,7 +802,7 @@ Recommended targets:
 Notes:
 
 - Path coverage is enforced by tests via explicit `PATH <id>` markers and `tests/coverage/required-paths.txt`.
-- `RETRO_HA_PATH_COVERAGE` is intended for tests/CI only (it should not be set in production services).
+- `KIOSK_RETROPIE_PATH_COVERAGE` is intended for tests/CI only (it should not be set in production services).
 
 Devcontainer:
 

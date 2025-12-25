@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-calls_file="${RETRO_HA_CALLS_FILE:-/dev/null}"
+calls_file="${KIOSK_RETROPIE_CALLS_FILE:-/dev/null}"
 printf 'getent %q\n' "$*" >>"$calls_file" || true
 
 if [[ "${1:-}" == "hosts" ]]; then

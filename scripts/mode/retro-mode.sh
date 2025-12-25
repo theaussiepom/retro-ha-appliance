@@ -22,7 +22,7 @@ source "$LIB_DIR/common.sh"
 source "$LIB_DIR/x11.sh"
 
 main() {
-  export RETRO_HA_LOG_PREFIX="retro-mode"
+  export KIOSK_RETROPIE_LOG_PREFIX="retro-mode"
 
   # This will be fully implemented once RetroPie is installed.
   # For now we try to launch EmulationStation if present.
@@ -39,23 +39,23 @@ main() {
   fi
 
   local x_display=":0"
-  local vt="${RETRO_HA_RETRO_X_VT:-8}"
+  local vt="${KIOSK_RETROPIE_RETRO_X_VT:-8}"
 
   log "Starting RetroPie (EmulationStation) on vt${vt}, display ${x_display}"
 
   local runtime_dir
-  runtime_dir="$(retro_ha_runtime_dir "$(id -u)")"
+  runtime_dir="$(kiosk_retropie_runtime_dir "$(id -u)")"
   local state_dir
-  state_dir="$(retro_ha_state_dir "$runtime_dir")"
+  state_dir="$(kiosk_retropie_state_dir "$runtime_dir")"
   run_cmd mkdir -p "$state_dir"
 
   local xinitrc
-  xinitrc="$(retro_ha_xinitrc_path "$state_dir" "retro-xinitrc")"
+  xinitrc="$(kiosk_retropie_xinitrc_path "$state_dir" "retro-xinitrc")"
 
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     record_call "write_file $xinitrc"
   else
-    retro_ha_xinitrc_prelude > "$xinitrc"
+    kiosk_retropie_xinitrc_prelude > "$xinitrc"
     cat << 'EOF' >> "$xinitrc"
 
 exec /usr/bin/emulationstation
@@ -66,13 +66,13 @@ EOF
 
   # Ensure we don't inherit a stale X lock/socket.
   local lock1 lock2
-  IFS= read -r lock1 < <(retro_ha_x_lock_paths "$x_display")
-  IFS= read -r lock2 < <(retro_ha_x_lock_paths "$x_display" | tail -n 1)
+  IFS= read -r lock1 < <(kiosk_retropie_x_lock_paths "$x_display")
+  IFS= read -r lock2 < <(kiosk_retropie_x_lock_paths "$x_display" | tail -n 1)
   run_cmd rm -f "$lock1" "$lock2" || true
 
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     cover_path "retro-mode:dry-run"
-    record_call "$(retro_ha_xinit_exec_record "$xinitrc" "$x_display" "$vt")"
+    record_call "$(kiosk_retropie_xinit_exec_record "$xinitrc" "$x_display" "$vt")"
     exit 0
   fi
 

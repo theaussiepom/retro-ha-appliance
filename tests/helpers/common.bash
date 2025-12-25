@@ -4,37 +4,37 @@ setup_test_root() {
 	# Save original PATH so we can restore it during teardown.
 	# Some tests intentionally set PATH to $TEST_ROOT/bin; after we delete TEST_ROOT,
 	# leaving PATH pointing there can break bats' own cleanup.
-	export RETRO_HA_TEST_ORIG_PATH="$PATH"
+	export KIOSK_RETROPIE_TEST_ORIG_PATH="$PATH"
 
 	# Repo root (for vendored libs, helpers, and stubs). Keep separate from
-	# RETRO_HA_ROOT, which is the temp test root for scripts under test.
-	if [[ -z "${RETRO_HA_REPO_ROOT:-}" ]]; then
-		RETRO_HA_REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-		export RETRO_HA_REPO_ROOT
+	# KIOSK_RETROPIE_ROOT, which is the temp test root for scripts under test.
+	if [[ -z "${KIOSK_RETROPIE_REPO_ROOT:-}" ]]; then
+		KIOSK_RETROPIE_REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+		export KIOSK_RETROPIE_REPO_ROOT
 	fi
 
 	TEST_ROOT="$(mktemp -d)"
 	export TEST_ROOT
 
-	export RETRO_HA_ROOT="$TEST_ROOT"
-	export RETRO_HA_CALLS_FILE="$TEST_ROOT/calls.log"
+	export KIOSK_RETROPIE_ROOT="$TEST_ROOT"
+	export KIOSK_RETROPIE_CALLS_FILE="$TEST_ROOT/calls.log"
 
 	# Suite-wide aggregation for path coverage assertions.
-	export RETRO_HA_PATH_COVERAGE=1
+	export KIOSK_RETROPIE_PATH_COVERAGE=1
 	# Use a stable file so we can run tests individually (per-test timeout runner).
-	export RETRO_HA_PATHS_FILE="${RETRO_HA_PATHS_FILE:-$RETRO_HA_REPO_ROOT/tests/.tmp/retro-ha-paths.log}"
+	export KIOSK_RETROPIE_PATHS_FILE="${KIOSK_RETROPIE_PATHS_FILE:-$KIOSK_RETROPIE_REPO_ROOT/tests/.tmp/kiosk-retropie-paths.log}"
 	# Avoid depending on external dirname (PATH may be intentionally minimal).
-	local paths_dir="${RETRO_HA_PATHS_FILE%/*}"
-	if [[ -z "$paths_dir" || "$paths_dir" == "$RETRO_HA_PATHS_FILE" ]]; then
+	local paths_dir="${KIOSK_RETROPIE_PATHS_FILE%/*}"
+	if [[ -z "$paths_dir" || "$paths_dir" == "$KIOSK_RETROPIE_PATHS_FILE" ]]; then
 		paths_dir="."
 	fi
 	mkdir -p "$paths_dir"
-	export RETRO_HA_CALLS_FILE_APPEND="$RETRO_HA_PATHS_FILE"
+	export KIOSK_RETROPIE_CALLS_FILE_APPEND="$KIOSK_RETROPIE_PATHS_FILE"
 
-	mkdir -p "$TEST_ROOT/etc/retro-ha" "$TEST_ROOT/var/lib/retro-ha" "$TEST_ROOT/var/lock"
+	mkdir -p "$TEST_ROOT/etc/kiosk-retropie" "$TEST_ROOT/var/lib/kiosk-retropie" "$TEST_ROOT/var/lock"
 
 	# Ensure stubs override system commands.
-	export PATH="$RETRO_HA_REPO_ROOT/tests/stubs:$PATH"
+	export PATH="$KIOSK_RETROPIE_REPO_ROOT/tests/stubs:$PATH"
 }
 
 make_isolated_path_with_stubs() {
@@ -70,7 +70,7 @@ make_isolated_path_with_stubs() {
 
 	local stub
 	for stub in "$@"; do
-		cp "$RETRO_HA_REPO_ROOT/tests/stubs/$stub" "$bin_dir/$stub"
+		cp "$KIOSK_RETROPIE_REPO_ROOT/tests/stubs/$stub" "$bin_dir/$stub"
 		chmod +x "$bin_dir/$stub"
 	done
 
@@ -80,8 +80,8 @@ make_isolated_path_with_stubs() {
 
 teardown_test_root() {
 	# Restore a safe PATH before deleting $TEST_ROOT.
-	if [[ -n "${RETRO_HA_TEST_ORIG_PATH:-}" ]]; then
-		export PATH="$RETRO_HA_TEST_ORIG_PATH"
+	if [[ -n "${KIOSK_RETROPIE_TEST_ORIG_PATH:-}" ]]; then
+		export PATH="$KIOSK_RETROPIE_TEST_ORIG_PATH"
 	fi
 
 	if [[ -n "${TEST_ROOT:-}" && -d "${TEST_ROOT:-}" ]]; then
@@ -91,9 +91,9 @@ teardown_test_root() {
 
 write_config_env() {
 	local content="$1"
-	local path="$TEST_ROOT/etc/retro-ha/config.env"
+	local path="$TEST_ROOT/etc/kiosk-retropie/config.env"
 	printf '%s\n' "$content" >"$path"
-	export RETRO_HA_CONFIG_ENV="$path"
+	export KIOSK_RETROPIE_CONFIG_ENV="$path"
 }
 
 # Convenience: assert a file contains a substring.

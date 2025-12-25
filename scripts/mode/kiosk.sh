@@ -10,7 +10,7 @@ if [[ -d "$SCRIPT_DIR/lib" ]]; then
 elif [[ -d "$SCRIPT_DIR/../lib" ]]; then
   LIB_DIR="$SCRIPT_DIR/../lib"
 else
-  echo "ha-kiosk [error]: unable to locate scripts/lib" >&2
+  echo "kiosk [error]: unable to locate scripts/lib" >&2
   exit 1
 fi
 
@@ -38,43 +38,43 @@ chromium_bin() {
 }
 
 main() {
-  export RETRO_HA_LOG_PREFIX="ha-kiosk"
+  export KIOSK_RETROPIE_LOG_PREFIX="kiosk"
 
-  if [[ -z "${HA_URL:-}" ]]; then
-    cover_path "ha-kiosk:missing-ha-url"
-    die "HA_URL is required (set to your dashboard URL in /etc/retro-ha/config.env)"
+  if [[ -z "${KIOSK_URL:-}" ]]; then
+    cover_path "kiosk:missing-kiosk-url"
+    die "KIOSK_URL is required (set to your kiosk URL in /etc/kiosk-retropie/config.env)"
   fi
 
   local x_display=":0"
-  local vt="${RETRO_HA_X_VT:-7}"
+  local vt="${KIOSK_RETROPIE_X_VT:-7}"
 
   local runtime_dir
-  runtime_dir="$(retro_ha_runtime_dir "$(id -u)")"
+  runtime_dir="$(kiosk_retropie_runtime_dir "$(id -u)")"
   local state_dir
-  state_dir="$(retro_ha_state_dir "$runtime_dir")"
+  state_dir="$(kiosk_retropie_state_dir "$runtime_dir")"
   run_cmd mkdir -p "$state_dir"
 
   local xinitrc
-  xinitrc="$(retro_ha_xinitrc_path "$state_dir" "ha-xinitrc")"
+  xinitrc="$(kiosk_retropie_xinitrc_path "$state_dir" "kiosk-xinitrc")"
 
   local chromium
   if ! chromium="$(chromium_bin)"; then
-    cover_path "ha-kiosk:missing-chromium"
+    cover_path "kiosk:missing-chromium"
     die "Chromium not found (expected chromium or chromium-browser)"
   fi
 
   if [[ "$chromium" == "chromium-browser" ]]; then
-    cover_path "ha-kiosk:chromium-browser"
+    cover_path "kiosk:chromium-browser"
   fi
 
   # Dedicated kiosk profile.
-  local profile_dir="${RETRO_HA_CHROMIUM_PROFILE_DIR:-$HOME/.config/retro-ha-chromium}"
+  local profile_dir="${KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR:-$HOME/.config/kiosk-retropie-chromium}"
   run_cmd mkdir -p "$profile_dir"
 
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
     record_call "write_file $xinitrc"
   else
-    retro_ha_xinitrc_prelude > "$xinitrc"
+    kiosk_retropie_xinitrc_prelude > "$xinitrc"
     cat << EOF >> "$xinitrc"
 
 exec "$chromium" \
@@ -85,7 +85,7 @@ exec "$chromium" \
   --disable-features=TranslateUI \
   --autoplay-policy=no-user-gesture-required \
   --user-data-dir="$profile_dir" \
-  "$HA_URL"
+  "$KIOSK_URL"
 EOF
   fi
 
@@ -93,17 +93,17 @@ EOF
 
   # Ensure we don't inherit a stale X lock/socket.
   local lock1 lock2
-  IFS= read -r lock1 < <(retro_ha_x_lock_paths "$x_display")
-  IFS= read -r lock2 < <(retro_ha_x_lock_paths "$x_display" | tail -n 1)
+  IFS= read -r lock1 < <(kiosk_retropie_x_lock_paths "$x_display")
+  IFS= read -r lock2 < <(kiosk_retropie_x_lock_paths "$x_display" | tail -n 1)
   run_cmd rm -f "$lock1" "$lock2" || true
 
   log "Starting Xorg on vt${vt}, display ${x_display}"
 
   # xinit syntax:
   #   xinit <client> -- <server> <display> [server-args...]
-  if [[ "${RETRO_HA_DRY_RUN:-0}" == "1" ]]; then
-    cover_path "ha-kiosk:dry-run"
-    record_call "$(retro_ha_xinit_exec_record "$xinitrc" "$x_display" "$vt")"
+  if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then
+    cover_path "kiosk:dry-run"
+    record_call "$(kiosk_retropie_xinit_exec_record "$xinitrc" "$x_display" "$vt")"
     exit 0
   fi
 

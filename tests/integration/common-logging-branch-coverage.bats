@@ -2,11 +2,11 @@
 
 # shellcheck disable=SC1090,SC1091
 
-RETRO_HA_REPO_ROOT="${RETRO_HA_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
+KIOSK_RETROPIE_REPO_ROOT="${KIOSK_RETROPIE_REPO_ROOT:-$(cd "$BATS_TEST_DIRNAME/../.." && pwd)}"
 
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-support/load"
-load "$RETRO_HA_REPO_ROOT/tests/vendor/bats-assert/load"
-load "$RETRO_HA_REPO_ROOT/tests/helpers/common"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-support/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/vendor/bats-assert/load"
+load "$KIOSK_RETROPIE_REPO_ROOT/tests/helpers/common"
 
 setup() {
   setup_test_root
@@ -18,18 +18,18 @@ test_teardown() {
 
 @test "branch coverage: common.sh + logging.sh helper branches" {
   # common.sh branches
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/common.sh"
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/common.sh"
 
-  # retro_ha_is_sourced branches: mirror the unit test pattern.
+  # kiosk_retropie_is_sourced branches: mirror the unit test pattern.
   local script
   script="$TEST_ROOT/sourced-check.sh"
   cat >"$script" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "${RETRO_HA_REPO_ROOT}/scripts/lib/common.sh"
+source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/lib/common.sh"
 
-if retro_ha_is_sourced; then
+if kiosk_retropie_is_sourced; then
   echo sourced
 else
   echo executed
@@ -44,72 +44,72 @@ SH
   assert_success
 
   # root branches
-  unset RETRO_HA_ROOT
-  run retro_ha_root
+  unset KIOSK_RETROPIE_ROOT
+  run kiosk_retropie_root
   assert_success
 
-  export RETRO_HA_ROOT="$TEST_ROOT/"
-  run retro_ha_root
+  export KIOSK_RETROPIE_ROOT="$TEST_ROOT/"
+  run kiosk_retropie_root
   assert_success
 
   # path branches
-  export RETRO_HA_ROOT="$TEST_ROOT"
-  run retro_ha_path "relative"
+  export KIOSK_RETROPIE_ROOT="$TEST_ROOT"
+  run kiosk_retropie_path "relative"
   assert_success
-  export RETRO_HA_ROOT="/"
-  run retro_ha_path "/etc/hosts"
+  export KIOSK_RETROPIE_ROOT="/"
+  run kiosk_retropie_path "/etc/hosts"
   assert_success
-  export RETRO_HA_ROOT="$TEST_ROOT"
-  run retro_ha_path "/etc/hosts"
+  export KIOSK_RETROPIE_ROOT="$TEST_ROOT"
+  run kiosk_retropie_path "/etc/hosts"
   assert_success
 
   # dirname branches
-  run retro_ha_dirname ""
+  run kiosk_retropie_dirname ""
   assert_success
-  run retro_ha_dirname "foo"
+  run kiosk_retropie_dirname "foo"
   assert_success
-  run retro_ha_dirname "foo/bar"
+  run kiosk_retropie_dirname "foo/bar"
   assert_success
-  run retro_ha_dirname "/foo"
+  run kiosk_retropie_dirname "/foo"
   assert_success
-  run retro_ha_dirname "foo/bar/"
+  run kiosk_retropie_dirname "foo/bar/"
   assert_success
 
   # record_call branches
-  export RETRO_HA_CALLS_FILE="$TEST_ROOT/calls-primary.log"
-  export RETRO_HA_CALLS_FILE_APPEND="$TEST_ROOT/calls-append.log"
+  export KIOSK_RETROPIE_CALLS_FILE="$TEST_ROOT/calls-primary.log"
+  export KIOSK_RETROPIE_CALLS_FILE_APPEND="$TEST_ROOT/calls-append.log"
   record_call "hello"
 
-  unset RETRO_HA_CALLS_FILE
+  unset KIOSK_RETROPIE_CALLS_FILE
   record_call "no-primary"
 
-  export RETRO_HA_CALLS_FILE="$TEST_ROOT/calls-primary.log"
-  unset RETRO_HA_CALLS_FILE_APPEND
+  export KIOSK_RETROPIE_CALLS_FILE="$TEST_ROOT/calls-primary.log"
+  unset KIOSK_RETROPIE_CALLS_FILE_APPEND
   record_call "no-append"
 
   # run_cmd branches
-  export RETRO_HA_DRY_RUN=1
+  export KIOSK_RETROPIE_DRY_RUN=1
   run run_cmd echo hi
   assert_success
 
-  export RETRO_HA_DRY_RUN=0
+  export KIOSK_RETROPIE_DRY_RUN=0
   run run_cmd echo hi
   assert_success
 
   # realpath
-  run retro_ha_realpath_m "a/../b"
+  run kiosk_retropie_realpath_m "a/../b"
   assert_success
 
   # logging.sh branches
   # shellcheck source=../../scripts/lib/logging.sh
-  source "$RETRO_HA_REPO_ROOT/scripts/lib/logging.sh"
+  source "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/logging.sh"
 
-  unset RETRO_HA_LOG_PREFIX
-  run retro_ha_log_prefix
+  unset KIOSK_RETROPIE_LOG_PREFIX
+  run kiosk_retropie_log_prefix
   assert_success
 
-  export RETRO_HA_LOG_PREFIX="x"
-  run retro_ha_log_prefix
+  export KIOSK_RETROPIE_LOG_PREFIX="x"
+  run kiosk_retropie_log_prefix
   assert_success
 
   run log "hello"
@@ -121,9 +121,9 @@ SH
   run bash -c '
     set -euo pipefail
     source "$1"
-    export RETRO_HA_PATH_COVERAGE=1
-    export RETRO_HA_CALLS_FILE_APPEND="$2"
+    export KIOSK_RETROPIE_PATH_COVERAGE=1
+    export KIOSK_RETROPIE_CALLS_FILE_APPEND="$2"
     die "boom"
-  ' bash "$RETRO_HA_REPO_ROOT/scripts/lib/logging.sh" "$TEST_ROOT/path-log.log"
+  ' bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/lib/logging.sh" "$TEST_ROOT/path-log.log"
   assert_failure
 }

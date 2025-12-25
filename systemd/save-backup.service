@@ -5,5 +5,5 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-EnvironmentFile=-/etc/retro-ha/config.env
-ExecStart=/usr/local/lib/retro-ha/save-backup.sh
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/save-backup.sh

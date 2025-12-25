@@ -4,8 +4,8 @@ After=multi-user.target
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/retro-ha/config.env
-ExecStart=/usr/local/lib/retro-ha/controller-listener-tty.sh
+EnvironmentFile=-/etc/kiosk-retropie/config.env
+ExecStart=/usr/local/lib/kiosk-retropie/controller-listener-tty.sh
 Restart=on-failure
 RestartSec=2
 

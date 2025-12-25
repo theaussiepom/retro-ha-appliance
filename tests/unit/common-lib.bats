@@ -2,77 +2,77 @@
 
 # shellcheck disable=SC1090,SC1091
 
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-support/load"
-load "${RETRO_HA_REPO_ROOT}/tests/vendor/bats-assert/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-support/load"
+load "${KIOSK_RETROPIE_REPO_ROOT}/tests/vendor/bats-assert/load"
 
 setup() {
-  source "${RETRO_HA_REPO_ROOT}/scripts/lib/common.sh"
+  source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/lib/common.sh"
 
-  export RETRO_HA_ROOT
-  RETRO_HA_ROOT="$(mktemp -d)"
+  export KIOSK_RETROPIE_ROOT
+  KIOSK_RETROPIE_ROOT="$(mktemp -d)"
 
-  export RETRO_HA_CALLS_FILE
-  RETRO_HA_CALLS_FILE="${RETRO_HA_ROOT}/calls/log.txt"
+  export KIOSK_RETROPIE_CALLS_FILE
+  KIOSK_RETROPIE_CALLS_FILE="${KIOSK_RETROPIE_ROOT}/calls/log.txt"
 
-  export RETRO_HA_CALLS_FILE_APPEND
-  RETRO_HA_CALLS_FILE_APPEND="${RETRO_HA_ROOT}/calls/all.txt"
-  export RETRO_HA_DRY_RUN=0
+  export KIOSK_RETROPIE_CALLS_FILE_APPEND
+  KIOSK_RETROPIE_CALLS_FILE_APPEND="${KIOSK_RETROPIE_ROOT}/calls/all.txt"
+  export KIOSK_RETROPIE_DRY_RUN=0
 }
 
 test_teardown() {
-  rm -rf "${RETRO_HA_ROOT}" || true
+  rm -rf "${KIOSK_RETROPIE_ROOT}" || true
 }
 
-@test "retro_ha_root normalizes trailing slash" {
-  RETRO_HA_ROOT="/tmp/retro-ha/"
-  run retro_ha_root
+@test "kiosk_retropie_root normalizes trailing slash" {
+  KIOSK_RETROPIE_ROOT="/tmp/kiosk-retropie/"
+  run kiosk_retropie_root
   assert_success
-  assert_output "/tmp/retro-ha"
+  assert_output "/tmp/kiosk-retropie"
 }
 
-@test "retro_ha_path prefixes absolute paths with RETRO_HA_ROOT" {
-  RETRO_HA_ROOT="/tmp/retro-ha"
-  run retro_ha_path "/etc/foo"
+@test "kiosk_retropie_path prefixes absolute paths with KIOSK_RETROPIE_ROOT" {
+  KIOSK_RETROPIE_ROOT="/tmp/kiosk-retropie"
+  run kiosk_retropie_path "/etc/foo"
   assert_success
-  assert_output "/tmp/retro-ha/etc/foo"
+  assert_output "/tmp/kiosk-retropie/etc/foo"
 }
 
-@test "retro_ha_path leaves absolute paths unchanged when RETRO_HA_ROOT is /" {
-  RETRO_HA_ROOT="/"
-  run retro_ha_path "/etc/foo"
+@test "kiosk_retropie_path leaves absolute paths unchanged when KIOSK_RETROPIE_ROOT is /" {
+  KIOSK_RETROPIE_ROOT="/"
+  run kiosk_retropie_path "/etc/foo"
   assert_success
   assert_output "/etc/foo"
 }
 
-@test "retro_ha_path leaves relative paths unchanged" {
-  RETRO_HA_ROOT="/tmp/retro-ha"
-  run retro_ha_path "relative/path"
+@test "kiosk_retropie_path leaves relative paths unchanged" {
+  KIOSK_RETROPIE_ROOT="/tmp/kiosk-retropie"
+  run kiosk_retropie_path "relative/path"
   assert_success
   assert_output "relative/path"
 }
 
-@test "retro_ha_dirname matches basic dirname cases" {
-  run retro_ha_dirname ""
+@test "kiosk_retropie_dirname matches basic dirname cases" {
+  run kiosk_retropie_dirname ""
   assert_success
   assert_output "."
 
-  run retro_ha_dirname "foo"
+  run kiosk_retropie_dirname "foo"
   assert_success
   assert_output "."
 
-  run retro_ha_dirname "foo/bar"
+  run kiosk_retropie_dirname "foo/bar"
   assert_success
   assert_output "foo"
 
-  run retro_ha_dirname "/foo"
+  run kiosk_retropie_dirname "/foo"
   assert_success
   assert_output "/"
 
-  run retro_ha_dirname "/foo/bar/"
+  run kiosk_retropie_dirname "/foo/bar/"
   assert_success
   assert_output "/foo"
 
-  run retro_ha_dirname "/"
+  run kiosk_retropie_dirname "/"
   assert_success
   assert_output "/"
 }
@@ -81,51 +81,51 @@ test_teardown() {
   run record_call "hello" "world"
   assert_success
 
-  [ -f "$RETRO_HA_CALLS_FILE" ]
-  [ -f "$RETRO_HA_CALLS_FILE_APPEND" ]
+  [ -f "$KIOSK_RETROPIE_CALLS_FILE" ]
+  [ -f "$KIOSK_RETROPIE_CALLS_FILE_APPEND" ]
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output "hello world"
 
-  run cat "$RETRO_HA_CALLS_FILE_APPEND"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE_APPEND"
   assert_success
   assert_output "hello world"
 }
 
 @test "cover_path records PATH entries when enabled" {
-  export RETRO_HA_PATH_COVERAGE=1
+  export KIOSK_RETROPIE_PATH_COVERAGE=1
 
   run cover_path "FOO"
   assert_success
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output "PATH FOO"
 }
 
 @test "run_cmd records calls in dry-run mode and returns success" {
-  RETRO_HA_DRY_RUN=1
+  KIOSK_RETROPIE_DRY_RUN=1
 
   run run_cmd false
   assert_success
 
-  run cat "$RETRO_HA_CALLS_FILE"
+  run cat "$KIOSK_RETROPIE_CALLS_FILE"
   assert_success
   assert_output "false"
 }
 
-@test "retro_ha_is_sourced detects sourced top-level script" {
+@test "kiosk_retropie_is_sourced detects sourced top-level script" {
   local script
-  script="${RETRO_HA_ROOT}/sourced-check.sh"
+  script="${KIOSK_RETROPIE_ROOT}/sourced-check.sh"
 
   cat >"$script" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 
-source "${RETRO_HA_REPO_ROOT}/scripts/lib/common.sh"
+source "${KIOSK_RETROPIE_REPO_ROOT}/scripts/lib/common.sh"
 
-if retro_ha_is_sourced; then
+if kiosk_retropie_is_sourced; then
   echo sourced
 else
   echo executed

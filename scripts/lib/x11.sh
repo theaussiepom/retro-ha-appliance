@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# X11 / xinit helpers shared by ha-kiosk and retro-mode.
+# X11 / xinit helpers shared by kiosk and retro-mode.
 
-retro_ha_runtime_dir() {
-  # Prefer XDG_RUNTIME_DIR if set; otherwise, /run/user/<uid> under RETRO_HA_ROOT.
+kiosk_retropie_runtime_dir() {
+  # Prefer XDG_RUNTIME_DIR if set; otherwise, /run/user/<uid> under KIOSK_RETROPIE_ROOT.
   local uid="${1:-}"
   if [[ -z "$uid" ]]; then
     uid="$(id -u)"
@@ -22,31 +22,31 @@ retro_ha_runtime_dir() {
     cover_path "lib-x11:runtime-fallback"
   fi
 
-  retro_ha_path "/run/user/${uid}"
+  kiosk_retropie_path "/run/user/${uid}"
 }
 
-retro_ha_state_dir() {
+kiosk_retropie_state_dir() {
   local runtime_dir="$1"
-  printf '%s\n' "${runtime_dir}/retro-ha"
+  printf '%s\n' "${runtime_dir}/kiosk-retropie"
 }
 
-retro_ha_xinitrc_path() {
+kiosk_retropie_xinitrc_path() {
   local state_dir="$1"
-  local name="$2" # e.g. ha-xinitrc or retro-xinitrc
+  local name="$2" # e.g. kiosk-xinitrc or retro-xinitrc
   printf '%s\n' "${state_dir}/${name}"
 }
 
-retro_ha_x_lock_paths() {
+kiosk_retropie_x_lock_paths() {
   local x_display="$1" # e.g. :0
 
   if declare -F cover_path > /dev/null 2>&1; then
     cover_path "lib-x11:x-lock-paths"
   fi
-  printf '%s\n' "$(retro_ha_path "/tmp/.X${x_display#:}-lock")"
-  printf '%s\n' "$(retro_ha_path "/tmp/.X11-unix/X${x_display#:}")"
+  printf '%s\n' "$(kiosk_retropie_path "/tmp/.X${x_display#:}-lock")"
+  printf '%s\n' "$(kiosk_retropie_path "/tmp/.X11-unix/X${x_display#:}")"
 }
 
-retro_ha_xinit_exec_record() {
+kiosk_retropie_xinit_exec_record() {
   local xinitrc="$1"
   local x_display="$2"
   local vt="$3"
@@ -57,7 +57,7 @@ retro_ha_xinit_exec_record() {
   printf '%s\n' "exec xinit ${xinitrc} -- /usr/lib/xorg/Xorg ${x_display} vt${vt} -nolisten tcp -keeptty"
 }
 
-retro_ha_xinitrc_prelude() {
+kiosk_retropie_xinitrc_prelude() {
   if declare -F cover_path > /dev/null 2>&1; then
     cover_path "lib-x11:xinitrc-prelude"
   fi
@@ -73,8 +73,8 @@ if command -v xset >/dev/null 2>&1; then
 fi
 
 # Optional rotation (xrandr names: normal,left,right,inverted).
-if [[ -n "${RETRO_HA_SCREEN_ROTATION:-}" ]] && command -v xrandr >/dev/null 2>&1; then
-  xrandr -o "${RETRO_HA_SCREEN_ROTATION:-}" || true
+if [[ -n "${KIOSK_RETROPIE_SCREEN_ROTATION:-}" ]] && command -v xrandr >/dev/null 2>&1; then
+  xrandr -o "${KIOSK_RETROPIE_SCREEN_ROTATION:-}" || true
 fi
 EOF
 }

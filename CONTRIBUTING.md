@@ -63,7 +63,7 @@ That is the same pipeline GitHub CI uses.
 Build the devcontainer image:
 
 ```bash
-docker build -t retro-ha-devcontainer -f .devcontainer/Dockerfile .
+docker build -t kiosk-retropie-devcontainer -f .devcontainer/Dockerfile .
 ```
 
 Run the full pipeline inside it:
@@ -72,7 +72,7 @@ Run the full pipeline inside it:
 docker run --rm \
   -v "$PWD:/work" \
   -w /work \
-  retro-ha-devcontainer \
+  kiosk-retropie-devcontainer \
   bash -lc './scripts/ci.sh'
 ```
 

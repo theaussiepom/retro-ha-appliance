@@ -1,18 +1,18 @@
 [Unit]
-Description=Home Assistant kiosk mode
+Description=Kiosk mode
 After=network-online.target
 Conflicts=retro-mode.service
 Wants=network-online.target
 
-# Fail open to RetroPie if HA kiosk repeatedly fails.
-OnFailure=retro-ha-failover.service
+# Fail open to RetroPie if kiosk repeatedly fails.
+OnFailure=kiosk-retropie-failover.service
 OnFailureJobMode=replace
 StartLimitIntervalSec=120
 StartLimitBurst=3
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/retro-ha/config.env
+EnvironmentFile=-/etc/kiosk-retropie/config.env
 User=retropi
 Group=retropi
 
@@ -24,7 +24,7 @@ TTYReset=yes
 TTYVHangup=yes
 TTYVTDisallocate=yes
 
-ExecStart=/usr/local/lib/retro-ha/ha-kiosk.sh
+ExecStart=/usr/local/lib/kiosk-retropie/kiosk.sh
 Restart=on-failure
 RestartSec=2
 
