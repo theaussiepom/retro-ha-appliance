@@ -1788,6 +1788,11 @@ run_allow_fail env KCOV_RETROPI_EXISTS=0 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MOD
   KIOSK_RETROPIE_INSTALL_RETROPIE=1 \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
 
+# Configured Chromium profile dir (covers install:chromium-profile-configured).
+run_allow_fail env KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
+  KIOSK_CHROMIUM_PROFILE_DIR="$KIOSK_RETROPIE_ROOT/var/lib/kiosk-retropie/chromium-profile" \
+  PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
+
 # Non-dry-run marker write (covers the date > "$MARKER_FILE" line).
 run_allow_fail env KIOSK_RETROPIE_ALLOW_NON_ROOT=1 KIOSK_RETROPIE_DRY_RUN=0 KCOV_RETROPI_EXISTS=1 KCOV_APT_CACHE_MODE=none KCOV_FLOCK_MODE=ok \
   PATH="$stub_bin:/usr/bin:/bin" "$ROOT_DIR/scripts/install.sh"
