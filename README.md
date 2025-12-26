@@ -1,39 +1,17 @@
 # kiosk-retropie
 
-This repo is a set of scripts + systemd units that turn a Raspberry Pi into a simple “single screen” appliance.
-Most of the time it boots straight into a full-screen Chromium kiosk, but you can drop into RetroPie on demand
-with a controller button press.
+kiosk-retropie turns a Raspberry Pi into a playful dual-purpose appliance.
+Most of the time it is a full-screen Chromium browser showing something useful like a Home Assistant dashboard,
+but press Start on a controller and the screen instantly transforms into a RetroPie gaming console.
+No menus, no mode toggles, and no reboot.
+The website simply gives way to retro games.
 
-It’s built to be dependable: predictable boots, clean mode switching, sensible failover, and local saves that
-still work even when networking (or NFS/MQTT) isn’t behaving.
+## Quick start (deploy to a Pi)
 
-## Quick start (dev + CI)
+Use one of these two paths:
 
-The canonical, repeatable test environment is the devcontainer.
-
-Build the devcontainer image:
-
-```bash
-docker build -t kiosk-retropie-devcontainer -f .devcontainer/Dockerfile .
-```
-
-Run the full CI pipeline inside it:
-
-```bash
-docker run --rm \
-  -v "$PWD:/work" \
-  -w /work \
-  kiosk-retropie-devcontainer \
-  bash -lc './scripts/ci.sh'
-```
-
-Or, use the Makefile (requires `make` + Docker on your host):
-
-```bash
-make ci
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the required pre-PR checks.
+- Pi Imager + cloud-init: easiest/most repeatable.
+- Manual install over SSH: fine if you don’t want cloud-init.
 
 Services are managed by `systemd` and run as a dedicated user (`retropi`) so Xorg/Chromium and input devices
 work cleanly without running the main kiosk loop as root.
@@ -827,26 +805,7 @@ command -v mosquitto_pub || true
 
 ## Development
 
-Recommended targets:
-
-- `./scripts/ci.sh` (runs what GitHub Actions runs: lint + tests + kcov coverage)
-- `make ci` (same idea, if you have `make` installed)
-- `make lint` (runs lint-sh, lint-yaml, lint-systemd, lint-markdown)
-- `make test` (runs unit + integration and prints a path coverage summary)
-- `make test-unit` (fast; runs on every commit)
-- `make test-integration` (slower; run after unit passes)
-- `./tests/bin/run-bats.sh` (everything)
-- `make path-coverage` (re-run tests and print derived required/uncovered counts)
-- `make coverage` (Linux/devcontainer recommended)
-
-Notes:
-
-- Path coverage is enforced by tests via explicit `PATH <id>` markers and `tests/coverage/required-paths.txt`.
-- `KIOSK_RETROPIE_PATH_COVERAGE` is intended for tests/CI only (it should not be set in production services).
-
-Devcontainer:
-
-- Use `.devcontainer/` to get a Linux environment with `kcov` and `systemd-analyze` for CI parity.
+Repo development, linting, and tests are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 

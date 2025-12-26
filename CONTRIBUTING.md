@@ -99,3 +99,18 @@ make ci
 
 Local environments can drift (tool versions, missing dependencies). If local results differ from CI, trust the
 devcontainer result and treat local runs as “best effort”.
+
+## Useful commands
+
+If you have Docker + `make` available locally:
+
+- `make lint` (runs lint-sh, lint-yaml, lint-systemd, lint-markdown)
+- `make test` (runs unit + integration)
+- `make test-unit` (fast; runs on every commit)
+- `make test-integration` (slower; run after unit passes)
+- `make coverage` (runs kcov coverage; Linux/devcontainer recommended)
+
+Notes:
+
+- Path coverage is enforced by tests via explicit `PATH <id>` markers and `tests/coverage/required-paths.txt`.
+- `KIOSK_RETROPIE_PATH_COVERAGE` is intended for tests/CI only (it should not be set in production services).
