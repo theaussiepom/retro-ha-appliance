@@ -50,7 +50,7 @@ make_fake_input_device() {
 	# Name must match *event-joystick glob; realpath basename must start with "event".
 	ln -sf "../event0" "$by_id/usb-fake-event-joystick"
 
-	export KIOSK_RETROPIE_INPUT_BY_ID_DIR="$by_id"
+	export RETROPIE_INPUT_BY_ID_DIR="$by_id"
 	export FAKE_CONTROLLER_FIFO="$fifo"
 }
 
@@ -126,10 +126,10 @@ wait_for_exit() {
 	echo ":kiosk.service:" >"$state_file"
 
 	LISTENER_LOG="$TEST_ROOT/controller-listener-tty.log"
-	KIOSK_RETROPIE_INPUT_BY_ID_DIR="$KIOSK_RETROPIE_INPUT_BY_ID_DIR" \
-		KIOSK_RETROPIE_START_DEBOUNCE_SEC=0 \
-		KIOSK_RETROPIE_MAX_TRIGGERS=1 \
-		KIOSK_RETROPIE_MAX_LOOPS=200 \
+	RETROPIE_INPUT_BY_ID_DIR="$RETROPIE_INPUT_BY_ID_DIR" \
+		RETROPIE_START_DEBOUNCE_SEC=0 \
+		RETROPIE_MAX_TRIGGERS=1 \
+		RETROPIE_MAX_LOOPS=200 \
 		SYSTEMCTL_STATE_FILE="$state_file" \
 		bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
 	local pid=$!
@@ -153,11 +153,11 @@ wait_for_exit() {
 	echo ":retro-mode.service:" >"$state_file"
 
 	LISTENER_LOG="$TEST_ROOT/controller-listener-tty-combo.log"
-	KIOSK_RETROPIE_INPUT_BY_ID_DIR="$KIOSK_RETROPIE_INPUT_BY_ID_DIR" \
-		KIOSK_RETROPIE_START_DEBOUNCE_SEC=0 \
-		KIOSK_RETROPIE_MAX_TRIGGERS=1 \
-		KIOSK_RETROPIE_MAX_LOOPS=200 \
-		KIOSK_RETROPIE_COMBO_WINDOW_SEC=5 \
+	RETROPIE_INPUT_BY_ID_DIR="$RETROPIE_INPUT_BY_ID_DIR" \
+		RETROPIE_START_DEBOUNCE_SEC=0 \
+		RETROPIE_MAX_TRIGGERS=1 \
+		RETROPIE_MAX_LOOPS=200 \
+		RETROPIE_COMBO_WINDOW_SEC=5 \
 		SYSTEMCTL_STATE_FILE="$state_file" \
 		bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/input/controller-listener-tty.sh" >"$LISTENER_LOG" 2>&1 &
 	local pid=$!
@@ -178,7 +178,7 @@ wait_for_exit() {
 
 	run env \
 		SYSTEMCTL_STATE_FILE="$state_file" \
-		KIOSK_RETROPIE_SKIP_LEDCTL=1 \
+		RETROPIE_SKIP_LEDCTL=1 \
 		KIOSK_RETROPIE_LIBDIR="$KIOSK_RETROPIE_REPO_ROOT/scripts/mode" \
 		"$KIOSK_RETROPIE_REPO_ROOT/scripts/healthcheck.sh"
 

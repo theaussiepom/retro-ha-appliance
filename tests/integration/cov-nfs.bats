@@ -33,7 +33,7 @@ teardown() {
 
 @test "mount-nfs calls mount when not mounted" {
 	export NFS_SERVER=nas
-	export NFS_PATH=/export/roms
+	export NFS_ROMS_PATH=/export/roms
 	mp="$TEST_ROOT/mnt/kiosk-retropie-roms"
 	mkdir -p "$mp"
 
@@ -54,7 +54,7 @@ teardown() {
 
 	# Avoid mount attempt.
 	export NFS_SERVER=
-	export NFS_PATH=
+	export NFS_ROMS_PATH=
 
 	# Allowlist only nes.
 	export KIOSK_RETROPIE_ROMS_SYSTEMS="nes"

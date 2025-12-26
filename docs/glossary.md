@@ -35,7 +35,7 @@ Short definitions for terms used across the docs.
 
 - **MQTT**: A lightweight pub/sub messaging protocol commonly used by dashboards/controllers and IoT devices.
 - **Topic**: The string namespace messages are published to (e.g. `kiosk-retropie/led/act/set`).
-- **Topic prefix**: A shared prefix (`KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`, default `kiosk-retropie`) so related topics group
+- **Topic prefix**: A shared prefix (`KIOSK_MQTT_TOPIC_PREFIX`, default `kiosk-retropie`) so related topics group
   together.
 - **Retained message**: A message stored by the broker and delivered immediately to new subscribers (useful for
   “current state”).

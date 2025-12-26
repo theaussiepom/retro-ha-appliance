@@ -73,8 +73,9 @@ if command -v xset >/dev/null 2>&1; then
 fi
 
 # Optional rotation (xrandr names: normal,left,right,inverted).
-if [[ -n "${KIOSK_RETROPIE_SCREEN_ROTATION:-}" ]] && command -v xrandr >/dev/null 2>&1; then
-  xrandr -o "${KIOSK_RETROPIE_SCREEN_ROTATION:-}" || true
+rotation="${KIOSK_SCREEN_ROTATION:-${KIOSK_RETROPIE_SCREEN_ROTATION:-}}"
+if [[ -n "$rotation" ]] && command -v xrandr >/dev/null 2>&1; then
+  xrandr -o "$rotation" || true
 fi
 EOF
 }

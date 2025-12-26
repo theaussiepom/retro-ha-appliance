@@ -67,7 +67,7 @@ main() {
   svc_stop kiosk.service || true
 
   # RetroPie mode should force LEDs on.
-  if [[ "${KIOSK_RETROPIE_SKIP_LEDCTL:-0}" == "1" ]]; then
+  if [[ "${RETROPIE_SKIP_LEDCTL:-${KIOSK_RETROPIE_SKIP_LEDCTL:-0}}" == "1" ]]; then
     cover_path "enter-retro-mode:skip-ledctl"
   else
     local ledctl

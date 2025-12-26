@@ -56,6 +56,19 @@ ensure_user() {
   done
 }
 
+ensure_kiosk_profile_dir() {
+  local user="retropi"
+  local profile_dir="${KIOSK_CHROMIUM_PROFILE_DIR:-${KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR:-}}"
+  if [[ -z "$profile_dir" ]]; then
+    cover_path "install:chromium-profile-default"
+    return 0
+  fi
+
+  cover_path "install:chromium-profile-configured"
+  run_cmd mkdir -p "$profile_dir"
+  run_cmd chown -R "$user:$user" "$profile_dir"
+}
+
 install_packages() {
   export DEBIAN_FRONTEND=noninteractive
 
@@ -65,6 +78,7 @@ install_packages() {
     ca-certificates \
     curl \
     git \
+    mosquitto-clients \
     nfs-common \
     python3 \
     rsync \
@@ -282,13 +296,16 @@ main() {
   log "Ensuring user retropi"
   ensure_user
 
+  log "Ensuring kiosk Chromium profile dir is writable"
+  ensure_kiosk_profile_dir
+
   log "Installing packages"
   install_packages
 
   log "Installing files"
   install_files
 
-  if [[ "${KIOSK_RETROPIE_INSTALL_RETROPIE:-0}" == "1" ]]; then
+  if [[ "${RETROPIE_INSTALL:-${KIOSK_RETROPIE_INSTALL_RETROPIE:-0}}" == "1" ]]; then
     cover_path "install:optional-retropie-enabled"
     log "Installing RetroPie (optional)"
     run_cmd "${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}/install-retropie.sh" || log "RetroPie install failed (continuing)"

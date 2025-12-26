@@ -46,7 +46,7 @@ main() {
   fi
 
   local x_display=":0"
-  local vt="${KIOSK_RETROPIE_X_VT:-7}"
+  local vt="${KIOSK_X_VT:-${KIOSK_RETROPIE_X_VT:-7}}"
 
   local runtime_dir
   runtime_dir="$(kiosk_retropie_runtime_dir "$(id -u)")"
@@ -68,7 +68,7 @@ main() {
   fi
 
   # Dedicated kiosk profile.
-  local profile_dir="${KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR:-$HOME/.config/kiosk-retropie-chromium}"
+  local profile_dir="${KIOSK_CHROMIUM_PROFILE_DIR:-${KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR:-$HOME/.config/kiosk-retropie-chromium}}"
   run_cmd mkdir -p "$profile_dir"
 
   if [[ "${KIOSK_RETROPIE_DRY_RUN:-0}" == "1" ]]; then

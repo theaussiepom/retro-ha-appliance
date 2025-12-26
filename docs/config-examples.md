@@ -2,211 +2,63 @@
 
 This project is configured via `/etc/kiosk-retropie/config.env`.
 
-These examples are intentionally verbose and scenario-driven. Copy one, then delete what you don’t need.
+This repo provides two canonical examples:
+
+1) Manual install (config file only): [examples/config.env](../examples/config.env)
+2) Flashing install (Pi Imager / cloud-init): [examples/user.data.yml](../examples/user.data.yml)
 
 Notes:
 
-- `KIOSK_RETROPIE_REPO_URL` + `KIOSK_RETROPIE_REPO_REF` are required for first-boot installs (cloud-init bootstrap).
-- `KIOSK_URL` is required for kiosk mode.
-- A line like `FOO=` means “set but empty” (often used to intentionally disable a feature or trigger a specific branch).
+- A line like `FOO=` means “set but empty”. This is often used to intentionally disable a feature or to force a
+  script down a specific error-handling path.
+- Some variables are “obvious plumbing” (e.g. `NFS_SERVER`), while others are application-specific (e.g.
+  `KIOSK_CHROMIUM_PROFILE_DIR`). The examples include inline comments for the application-specific ones.
 
----
+## Manual install example
 
-## 1) Minimal: kiosk + manual Retro
+The manual install path assumes you can SSH in and run the installer yourself.
 
-Use this when you only want the core appliance behavior and will switch modes manually.
+How to use it:
 
-```bash
-# Required: bootstrap pin
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
+1. Copy it into place:
 
-# Required: kiosk
-KIOSK_URL=http://kiosk.local/
+  ```bash
+  sudo mkdir -p /etc/kiosk-retropie
+  sudo cp /opt/kiosk-retropie/examples/config.env /etc/kiosk-retropie/config.env
+  ```
 
-# Optional display tweaks
-KIOSK_RETROPIE_SCREEN_ROTATION=normal
-KIOSK_RETROPIE_X_VT=7
-KIOSK_RETROPIE_RETRO_X_VT=8
+1. Edit `/etc/kiosk-retropie/config.env` and fill in at least `KIOSK_URL`.
+1. Run the installer:
 
-# Keep optional integrations off
-KIOSK_RETROPIE_LED_MQTT_ENABLED=0
-KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=0
-KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0
-```
+  ```bash
+  sudo /opt/kiosk-retropie/scripts/install.sh
+  ```
 
----
+The installer creates the `retropi` user (if needed) and installs systemd services that run under that account.
 
-## 2) “Appliance” pinning: use a commit SHA
+Mandatory variables for this scenario:
 
-This maximizes repeatability: every Pi installs the same code.
+- `KIOSK_URL`
 
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=863329f
+Optional features (NFS ROM sync, save backups, MQTT) are fully commented out in the example so you can enable
+them intentionally.
 
-KIOSK_URL=http://kiosk.local/
-```
+## Flashing / cloud-init example
 
----
+The flashing path relies on cloud-init to write the config file and run a one-time installer service.
 
-## 3) Rotate screen left + custom Chromium profile
+Mandatory variables for this scenario:
 
-Useful for portrait displays or odd mounting.
+- `KIOSK_RETROPIE_REPO_URL`
+- `KIOSK_RETROPIE_REPO_REF`
+- `KIOSK_URL`
 
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
+Optional options are commented out in the config payload embedded in the user-data.
 
-KIOSK_URL=http://kiosk.local/
+How to use it:
 
-KIOSK_RETROPIE_SCREEN_ROTATION=left
-KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR=/var/lib/kiosk-retropie/chromium-profile
-```
-
----
-
-## 4) Controller switching: custom enter trigger key code
-
-If your controller reports a different key code than the default (`315`).
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE=314
-KIOSK_RETROPIE_START_DEBOUNCE_SEC=0.5
-```
-
----
-
-## 5) ROM sync from NFS (read-only)
-
-This syncs ROMs *into* local storage at boot. Gameplay does not run from NFS.
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-# Enable NFS ROM sync
-NFS_SERVER=192.168.1.20
-NFS_PATH=/export/retropie
-
-# Optional: mount point and subdir
-KIOSK_RETROPIE_NFS_MOUNT_POINT=/mnt/kiosk-retropie-roms
-KIOSK_RETROPIE_NFS_ROMS_SUBDIR=roms
-
-# Optional: only sync some systems
-KIOSK_RETROPIE_ROMS_SYSTEMS=nes,snes,megadrive
-KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS=
-
-# Optional: mirror deletions (dangerous if you’re not expecting it)
-KIOSK_RETROPIE_ROMS_SYNC_DELETE=0
-```
-
----
-
-## 6) Save backups to NFS (read-write, periodic)
-
-This copies local saves/states to NFS on a timer and skips while Retro mode is active.
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
-
-# Defaults to NFS_SERVER/NFS_PATH if unset
-KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER=192.168.1.20
-KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH=/export/kiosk-retropie-backups
-
-# Where to mount the backup share
-KIOSK_RETROPIE_SAVE_BACKUP_DIR=/mnt/kiosk-retropie-backup
-
-# Subdir on the mounted share
-KIOSK_RETROPIE_SAVE_BACKUP_SUBDIR=pi-living-room
-
-# Mirror deletions from local -> NFS
-KIOSK_RETROPIE_SAVE_BACKUP_DELETE=0
-```
-
----
-
-## 7) MQTT client integration: MQTT LED control
-
-Enables two-way LED sync: commands from an MQTT client control sysfs LEDs, and sysfs changes publish state.
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-KIOSK_RETROPIE_LED_MQTT_ENABLED=1
-KIOSK_RETROPIE_MQTT_TOPIC_PREFIX=kiosk-retropie
-KIOSK_RETROPIE_LED_MQTT_POLL_SEC=2
-
-MQTT_HOST=192.168.1.50
-MQTT_PORT=1883
-MQTT_USERNAME=mqttuser
-MQTT_PASSWORD=replace-me
-MQTT_TLS=0
-```
-
----
-
-## 8) MQTT client integration: MQTT screen brightness
-
-Publishes brightness state and accepts brightness percent commands.
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
-KIOSK_RETROPIE_MQTT_TOPIC_PREFIX=kiosk-retropie
-KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC=2
-
-# Optional: pick a specific backlight device (otherwise auto-detect)
-KIOSK_RETROPIE_BACKLIGHT_NAME=rpi_backlight
-
-MQTT_HOST=192.168.1.50
-MQTT_PORT=1883
-MQTT_USERNAME=mqttuser
-MQTT_PASSWORD=replace-me
-MQTT_TLS=0
-```
-
----
-
-## 9) MQTT over TLS (typical pattern)
-
-If your broker requires TLS, you’ll also need the broker CA available on the Pi.
-
-```bash
-KIOSK_RETROPIE_REPO_URL=https://github.com/theaussiepom/kiosk-retropie.git
-KIOSK_RETROPIE_REPO_REF=v0.0.0
-
-KIOSK_URL=http://kiosk.local/
-
-KIOSK_RETROPIE_LED_MQTT_ENABLED=1
-KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
-KIOSK_RETROPIE_MQTT_TOPIC_PREFIX=kiosk-retropie
-
-MQTT_HOST=mqtt.example.internal
-MQTT_PORT=8883
-MQTT_USERNAME=mqttuser
-MQTT_PASSWORD=replace-me
-MQTT_TLS=1
-
-# If the scripts support it in your setup, you may also mount a CA file and/or use mosquitto client options.
-# (Broker TLS options vary; keep this file focused on env-vars the appliance consumes.)
-```
+1. In Raspberry Pi Imager, paste the file content into the OS customization “user-data” field (cloud-init).
+1. Inside the embedded `/etc/kiosk-retropie/config.env` payload, set `KIOSK_URL` (and optionally set
+  `KIOSK_RETROPIE_REPO_REF` to a tag/commit if you want deterministic installs).
+1. Boot the Pi. On first boot, cloud-init writes `/etc/kiosk-retropie/config.env`, installs a small bootstrap
+  script + `kiosk-retropie-install.service`, and enables the service so it retries until install succeeds.

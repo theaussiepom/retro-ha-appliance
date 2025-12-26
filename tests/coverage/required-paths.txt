@@ -66,6 +66,8 @@ install:lock-acquired
 install:marker-after-lock
 install:user-exists
 install:user-created
+install:chromium-profile-default
+install:chromium-profile-configured
 install:chromium-browser-pkg
 install:chromium-pkg
 install:chromium-none
@@ -130,6 +132,8 @@ led-mqtt:state-max-loops
 
 screen-brightness-mqtt:backlight-auto
 screen-brightness-mqtt:backlight-name
+screen-brightness-mqtt:backlight-name-file
+screen-brightness-mqtt:backlight-name-missing
 screen-brightness-mqtt:disabled
 screen-brightness-mqtt:invalid-payload
 screen-brightness-mqtt:max-invalid
@@ -186,6 +190,7 @@ leds-on:run
 leds-off:run
 
 mount-nfs:not-configured
+mount-nfs:legacy-nfs-path
 mount-nfs:already-mounted
 mount-nfs:mount-attempt
 mount-nfs:mount-failed
@@ -193,6 +198,8 @@ mount-nfs:mount-success
 
 mount-nfs-backup:disabled
 mount-nfs-backup:not-configured
+mount-nfs-backup:legacy-server-ignored
+mount-nfs-backup:legacy-path
 mount-nfs-backup:already-mounted
 mount-nfs-backup:mount-attempt
 mount-nfs-backup:mount-failed
@@ -200,7 +207,7 @@ mount-nfs-backup:mount-success
 
 sync-roms:rsync-missing
 sync-roms:not-mounted
-sync-roms:with-subdir
+sync-roms:legacy-subdir-ignored
 sync-roms:src-missing
 sync-roms:delete-enabled
 sync-roms:allowlist

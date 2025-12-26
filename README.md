@@ -1,40 +1,20 @@
 # kiosk-retropie
 
-## Quick start (dev + CI)
+kiosk-retropie turns a Raspberry Pi into a playful dual-purpose appliance.
+Most of the time it is a full-screen Chromium browser showing something useful like a Home Assistant dashboard,
+but press Start on a controller and the screen instantly transforms into a RetroPie gaming console.
+No menus, no mode toggles, and no reboot.
+The website simply gives way to retro games.
 
-The canonical, repeatable test environment is the devcontainer.
+## Quick start (deploy to a Pi)
 
-Build the devcontainer image:
+Use one of these two paths:
 
-```bash
-docker build -t kiosk-retropie-devcontainer -f .devcontainer/Dockerfile .
-```
+- Pi Imager + cloud-init: easiest/most repeatable.
+- Manual install over SSH: fine if you don’t want cloud-init.
 
-Run the full CI pipeline inside it:
-
-```bash
-docker run --rm \
-  -v "$PWD:/work" \
-  -w /work \
-  kiosk-retropie-devcontainer \
-  bash -lc './scripts/ci.sh'
-```
-
-Or, use the Makefile (requires `make` + Docker on your host):
-
-```bash
-make ci
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the required pre-PR checks.
-
-This repo turns a Raspberry Pi into a dual-mode appliance with strict display ownership:
-
-- Kiosk mode (default): full-screen Chromium
-- RetroPie mode (on-demand): launched by controller input
-
-The focus is determinism, recoverability, and fail-open behavior.
-If the kiosk isn’t healthy, you can still get into RetroPie.
+Services are managed by `systemd` and run as a dedicated user (`retropi`) so Xorg/Chromium and input devices
+work cleanly without running the main kiosk loop as root.
 
 ## How it works (plain English)
 
@@ -114,7 +94,7 @@ flowchart TD
 
 1. Use Raspberry Pi Imager to flash Raspberry Pi OS.
 1. Provide cloud-init user-data (first-boot provisioning) based on
-   [examples/pi-imager/user-data.example.yml](examples/pi-imager/user-data.example.yml).
+  [examples/user.data.yml](examples/user.data.yml).
 1. Fill in at least:
 
 ```bash
@@ -147,7 +127,7 @@ sudo apt-get install -y --no-install-recommends ca-certificates curl git
 
 ```bash
 sudo mkdir -p /etc/kiosk-retropie
-sudo cp /path/to/kiosk-retropie/examples/config.env.example /etc/kiosk-retropie/config.env
+sudo cp /path/to/kiosk-retropie/examples/config.env /etc/kiosk-retropie/config.env
 sudo nano /etc/kiosk-retropie/config.env
 ```
 
@@ -159,11 +139,18 @@ cd /opt/kiosk-retropie
 sudo ./scripts/install.sh
 ```
 
+The installer creates the `retropi` user if it does not already exist, and installs systemd units that run
+kiosk/Retro mode under that account.
+
 ## Configuration
 
 Runtime configuration lives in `/etc/kiosk-retropie/config.env`.
 
-Start with [examples/config.env.example](examples/config.env.example).
+Start with [examples/config.env](examples/config.env).
+
+Some variables are “obvious plumbing” (e.g. `NFS_SERVER`), while others are application-specific and assume a bit
+of knowledge about what the appliance is doing (e.g. `KIOSK_CHROMIUM_PROFILE_DIR`). The application-specific
+variables below include short explanations and ways to discover sensible values.
 
 ### Controller button codes (entry/exit)
 
@@ -180,11 +167,11 @@ Press the buttons you want to use and note the `code=` values.
 
 Then set these in `/etc/kiosk-retropie/config.env`:
 
-- `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` (optional, default `315`): button code that enters Retro (kiosk -> Retro)
-- `KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE` (optional, default `315`): button code that triggers the exit combo
-- `KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE` (optional, default `304`): second button for exit combo (press this, then trigger)
-- `KIOSK_RETROPIE_COMBO_WINDOW_SEC` (optional, default `0.75`): max seconds between the second button and trigger
-- `KIOSK_RETROPIE_START_DEBOUNCE_SEC` (optional, default `1.0`): debounce for trigger presses
+- `RETROPIE_ENTER_TRIGGER_CODE` (optional, default `315`): button code that enters Retro (kiosk -> Retro)
+- `RETROPIE_EXIT_TRIGGER_CODE` (optional, default `315`): button code that triggers the exit combo
+- `RETROPIE_EXIT_SECOND_CODE` (optional, default `304`): second button for exit combo (press this, then trigger)
+- `RETROPIE_COMBO_WINDOW_SEC` (optional, default `0.75`): max seconds between the second button and trigger
+- `RETROPIE_START_DEBOUNCE_SEC` (optional, default `1.0`): debounce for trigger presses
 
 #### On-device calibration checklist
 
@@ -198,9 +185,10 @@ Then set these in `/etc/kiosk-retropie/config.env`:
     Press the buttons you want to use and note the `code=` values.
 
 1. Update `/etc/kiosk-retropie/config.env` with the codes you chose:
-   - Set `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` for kiosk -> Retro.
-   - For Retro -> kiosk, set `KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE` and `KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE`
-     (second button first, then trigger).
+
+    - Set `RETROPIE_ENTER_TRIGGER_CODE` for kiosk -> Retro.
+    - For Retro -> kiosk, set `RETROPIE_EXIT_SECOND_CODE` and `RETROPIE_EXIT_TRIGGER_CODE`
+      (second button first, then trigger).
 
 1. Restart the listeners so they pick up the new config:
 
@@ -209,9 +197,10 @@ Then set these in `/etc/kiosk-retropie/config.env`:
     ```
 
 1. Verify behavior:
-   - From kiosk: press your enter trigger and confirm Retro starts.
-   - From Retro: press your exit combo (second button, then trigger within
-     `KIOSK_RETROPIE_COMBO_WINDOW_SEC`) and confirm kiosk returns.
+
+    - From kiosk: press your enter trigger and confirm Retro starts.
+    - From Retro: press your exit combo (second button, then trigger within
+      `RETROPIE_COMBO_WINDOW_SEC`) and confirm kiosk returns.
 
 ### Repo pinning (first boot installer)
 
@@ -224,16 +213,27 @@ The first-boot bootstrap and installer fetch this repo using:
 ### Display
 
 - `KIOSK_URL` (required for kiosk): the full URL to open in Chromium.
-- `KIOSK_RETROPIE_SCREEN_ROTATION` (optional): `normal`, `left`, `right`, or `inverted`.
+- `KIOSK_SCREEN_ROTATION` (optional): `normal`, `left`, `right`, or `inverted`.
 
 Xorg VTs (virtual terminals):
 
-- `KIOSK_RETROPIE_X_VT` (optional, default: `7`): VT used by kiosk
-- `KIOSK_RETROPIE_RETRO_X_VT` (optional, default: `8`): VT used by Retro mode
+- `KIOSK_X_VT` (optional, default: `7`): VT used by kiosk
+- `RETROPIE_X_VT` (optional, default: `8`): VT used by Retro mode
+
+Linux exposes multiple text/graphics “virtual terminals” (numbered sessions). This project uses separate VTs so
+kiosk and Retro can cleanly take ownership of the display.
 
 Chromium profile directory:
 
-- `KIOSK_RETROPIE_CHROMIUM_PROFILE_DIR` (optional, default: `$HOME/.config/kiosk-retropie-chromium`)
+- `KIOSK_CHROMIUM_PROFILE_DIR` (optional, default: `$HOME/.config/kiosk-retropie-chromium`)
+
+This is Chromium’s “user profile” directory (cookies, local storage, cache, preferences). Set it if you want the
+kiosk to keep state across restarts and/or you want to control where that state is stored. The directory must be
+writable by the user running the kiosk service (by default, `retropi`).
+
+If you set `KIOSK_CHROMIUM_PROFILE_DIR` to a path outside `retropi`’s home (for example under `/var/lib`), make
+sure it’s owned by `retropi:retropi` (or otherwise writable by that user). If the variable is already set when
+you run `./scripts/install.sh`, the installer will create the directory and `chown` it to `retropi`.
 
 ### ROM sync from NFS (optional)
 
@@ -242,64 +242,71 @@ ROMs are stored locally and can be synced from NFS on boot.
 Required to enable NFS sync:
 
 - `NFS_SERVER` (e.g. `192.168.1.20`)
-- `NFS_PATH` (e.g. `/export/retropie`)
+- `NFS_ROMS_PATH` (e.g. `/export/retropie`)
 
 Optional variables:
 
-- `KIOSK_RETROPIE_NFS_MOUNT_POINT` (default: `/mnt/kiosk-retropie-roms`)
-- `KIOSK_RETROPIE_NFS_MOUNT_OPTIONS` (default: `ro`)
-- `KIOSK_RETROPIE_NFS_ROMS_SUBDIR` (default: empty)
-- `KIOSK_RETROPIE_ROMS_DIR` (default: `/var/lib/kiosk-retropie/retropie/roms`)
-- `KIOSK_RETROPIE_ROMS_SYNC_DELETE` (default: `0`; set to `1` to mirror deletions from NFS)
-- `KIOSK_RETROPIE_ROMS_OWNER` (default: `retropi:retropi`)
+- `RETROPIE_NFS_MOUNT_POINT` (default: `/mnt/kiosk-retropie-roms`)
+- `RETROPIE_NFS_MOUNT_OPTIONS` (default: `ro`)
+
+`NFS_ROMS_PATH` should point at the ROM root (no extra subdir setting).
+
+- `RETROPIE_ROMS_DIR` (default: `/var/lib/kiosk-retropie/retropie/roms`)
+- `RETROPIE_ROMS_SYNC_DELETE` (default: `0`; set to `1` to mirror deletions from NFS)
+- `RETROPIE_ROMS_OWNER` (default: `retropi:retropi`)
 
 Optional system filtering:
 
-- `KIOSK_RETROPIE_ROMS_SYSTEMS` (default: empty; if set, only these systems are synced)
-- `KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS` (default: empty; systems to skip)
+- `RETROPIE_ROMS_SYSTEMS` (default: empty; if set, only these systems are synced)
+- `RETROPIE_ROMS_EXCLUDE_SYSTEMS` (default: empty; systems to skip)
 
 ### Save data policy
 
 Save files and save states are always local:
 
-- `KIOSK_RETROPIE_SAVES_DIR` (default: `/var/lib/kiosk-retropie/retropie/saves`)
-- `KIOSK_RETROPIE_STATES_DIR` (default: `/var/lib/kiosk-retropie/retropie/states`)
+- `RETROPIE_SAVES_DIR` (default: `/var/lib/kiosk-retropie/retropie/saves`)
+- `RETROPIE_STATES_DIR` (default: `/var/lib/kiosk-retropie/retropie/states`)
 
 ### Optional save backup to NFS
 
 An optional periodic backup copies local saves/states to NFS.
 It never runs during gameplay (it skips while `retro-mode.service` is active).
 
-- `KIOSK_RETROPIE_SAVE_BACKUP_ENABLED` (default: `0`; set to `1` to enable)
-- `KIOSK_RETROPIE_SAVE_BACKUP_DIR` (default: `/mnt/kiosk-retropie-backup`)
-- `KIOSK_RETROPIE_SAVE_BACKUP_SUBDIR` (default: `kiosk-retropie-saves`)
-- `KIOSK_RETROPIE_SAVE_BACKUP_DELETE` (default: `0`)
+- `RETROPIE_SAVE_BACKUP_ENABLED` (default: `0`; set to `1` to enable)
+- `RETROPIE_SAVE_BACKUP_DIR` (default: `/mnt/kiosk-retropie-backup`)
+- `RETROPIE_SAVE_BACKUP_SUBDIR` (default: `kiosk-retropie-saves`)
+- `RETROPIE_SAVE_BACKUP_DELETE` (default: `0`)
 
-NFS settings (defaults to `NFS_SERVER`/`NFS_PATH` if unset):
+Backup NFS settings:
 
-- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER`
-- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH`
-- `KIOSK_RETROPIE_SAVE_BACKUP_NFS_MOUNT_OPTIONS` (default: `rw`)
+- `NFS_SERVER`
+- `NFS_SAVE_BACKUP_PATH`
+- `RETROPIE_SAVE_BACKUP_NFS_MOUNT_OPTIONS` (default: `rw`)
 
 ### Controller listeners (advanced)
 
 Controller listeners prefer evdev devices under `/dev/input/by-id`.
 
-- `KIOSK_RETROPIE_INPUT_BY_ID_DIR` (optional, default: `/dev/input/by-id`)
-- `KIOSK_RETROPIE_START_BUTTON_CODE` (optional, default: `315`)
-- `KIOSK_RETROPIE_START_DEBOUNCE_SEC` (optional, default: `1.0`)
+- `RETROPIE_INPUT_BY_ID_DIR` (optional, default: `/dev/input/by-id`)
+- `RETROPIE_INPUT_DEVICES` (optional; explicit colon/comma/space-separated device paths for testing)
+- `RETROPIE_START_DEBOUNCE_SEC` (optional, default: `1.0`)
 
 Safety / loop limits:
 
-- `KIOSK_RETROPIE_MAX_TRIGGERS` (optional; max "start" events before exiting)
-- `KIOSK_RETROPIE_MAX_LOOPS` (optional; max poll loops before exiting)
+- `RETROPIE_MAX_TRIGGERS` (optional; max trigger events before exiting)
+- `RETROPIE_MAX_LOOPS` (optional; max poll loops before exiting)
+
+These exist primarily for testing and diagnostics. They cause the controller listener loop to exit after a bounded
+number of iterations/events instead of running forever. Leave them unset (or `0`) for normal appliance operation.
 
 ### LED MQTT bridge (optional)
 
-- `KIOSK_RETROPIE_LED_MQTT_ENABLED` (default: `0`; set to `1` to enable)
-- `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
-- `KIOSK_RETROPIE_LED_MQTT_POLL_SEC` (optional, default: `2`)
+- `KIOSK_LED_MQTT_ENABLED` (default: `0`; set to `1` to enable)
+- `KIOSK_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
+- `KIOSK_LED_MQTT_POLL_SEC` (optional, default: `2`)
   Poll sysfs and publish state changes made outside MQTT.
+- `KIOSK_LED_MQTT_MAX_LOOPS` (optional, default: `0`)
+  Max poll loops before exiting (`0` means run forever).
 
 Broker settings:
 
@@ -309,16 +316,21 @@ Broker settings:
 - `MQTT_PASSWORD` (optional)
 - `MQTT_TLS` (default: `0`; set to `1` to enable TLS)
 
+`KIOSK_MQTT_TOPIC_PREFIX` controls the root topic used by the MQTT bridges (for example
+`<prefix>/led/act/set`). If you run multiple kiosks on one broker, give each kiosk a unique prefix.
+
 ### Screen brightness MQTT bridge (optional)
 
 Controls the display backlight brightness via sysfs (`/sys/class/backlight`).
 
-- `KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED` (default: `0`; set to `1` to enable)
-- `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
-- `KIOSK_RETROPIE_BACKLIGHT_NAME` (optional)
+- `KIOSK_SCREEN_BRIGHTNESS_MQTT_ENABLED` (default: `0`; set to `1` to enable)
+- `KIOSK_MQTT_TOPIC_PREFIX` (default: `kiosk-retropie`)
+- `KIOSK_BACKLIGHT_NAME` (optional)
   Which backlight device under `/sys/class/backlight` to control; defaults to the first one found.
-- `KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_POLL_SEC` (optional, default: `2`)
+- `KIOSK_SCREEN_BRIGHTNESS_MQTT_POLL_SEC` (optional, default: `2`)
   Poll sysfs and publish state changes made outside MQTT.
+- `KIOSK_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS` (optional, default: `0`)
+  Max poll loops before exiting (`0` means run forever).
 
 Broker settings (same as LED MQTT bridge):
 
@@ -327,6 +339,12 @@ Broker settings (same as LED MQTT bridge):
 - `MQTT_USERNAME` (optional)
 - `MQTT_PASSWORD` (optional)
 - `MQTT_TLS` (default: `0`; set to `1` to enable TLS)
+
+To discover valid `KIOSK_BACKLIGHT_NAME` values on the Pi:
+
+```bash
+ls -1 /sys/class/backlight
+```
 
 ## MQTT LED control (optional)
 
@@ -381,7 +399,7 @@ exposes an **MQTT-controlled** LED switch.
 
 ### LED MQTT topics
 
-Default prefix: `kiosk-retropie` (set `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`).
+Default prefix: `kiosk-retropie` (set `KIOSK_MQTT_TOPIC_PREFIX`).
 
 Command topics:
 
@@ -438,7 +456,7 @@ mqtt:
 
 ### Screen brightness MQTT topics
 
-Default prefix: `kiosk-retropie` (set `KIOSK_RETROPIE_MQTT_TOPIC_PREFIX`).
+Default prefix: `kiosk-retropie` (set `KIOSK_MQTT_TOPIC_PREFIX`).
 
 - Command: `kiosk-retropie/screen/brightness/set` (payload: `0`-`100`)
 - State (retained): `kiosk-retropie/screen/brightness/state` (payload: `0`-`100`)
@@ -702,7 +720,7 @@ journalctl -u kiosk-mode-controller-listener.service -b --no-pager
 #### Symptom: controller is detected but Start button does not trigger
 
 The enter trigger defaults to `315` (`BTN_START`). If your controller maps Start differently, you
-can override `KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE` in `/etc/kiosk-retropie/config.env`.
+can override `RETROPIE_ENTER_TRIGGER_CODE` in `/etc/kiosk-retropie/config.env`.
 
 If you are unsure of your key code:
 
@@ -732,7 +750,7 @@ journalctl -u boot-sync.service -b --no-pager
 1. Validate config:
 
 ```bash
-grep -n '^NFS_SERVER=\|^NFS_PATH=' /etc/kiosk-retropie/config.env || true
+grep -n '^NFS_SERVER=\|^NFS_ROMS_PATH=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Confirm mount status:
@@ -749,7 +767,7 @@ mount | grep kiosk-retropie-roms || true
 1. Ensure it is enabled:
 
 ```bash
-grep -n '^KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=' /etc/kiosk-retropie/config.env || true
+grep -n '^RETROPIE_SAVE_BACKUP_ENABLED=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Inspect the timer and last run:
@@ -769,7 +787,7 @@ Note: the backup intentionally skips while `retro-mode.service` is active.
 
 ```bash
 systemctl status kiosk-retropie-led-mqtt.service --no-pager
-grep -n '^KIOSK_RETROPIE_LED_MQTT_ENABLED=\|^MQTT_HOST=' /etc/kiosk-retropie/config.env || true
+grep -n '^KIOSK_LED_MQTT_ENABLED=\|^MQTT_HOST=' /etc/kiosk-retropie/config.env || true
 ```
 
 1. Check logs:
@@ -787,26 +805,7 @@ command -v mosquitto_pub || true
 
 ## Development
 
-Recommended targets:
-
-- `./scripts/ci.sh` (runs what GitHub Actions runs: lint + tests + kcov coverage)
-- `make ci` (same idea, if you have `make` installed)
-- `make lint` (runs lint-sh, lint-yaml, lint-systemd, lint-markdown)
-- `make test` (runs unit + integration and prints a path coverage summary)
-- `make test-unit` (fast; runs on every commit)
-- `make test-integration` (slower; run after unit passes)
-- `./tests/bin/run-bats.sh` (everything)
-- `make path-coverage` (re-run tests and print derived required/uncovered counts)
-- `make coverage` (Linux/devcontainer recommended)
-
-Notes:
-
-- Path coverage is enforced by tests via explicit `PATH <id>` markers and `tests/coverage/required-paths.txt`.
-- `KIOSK_RETROPIE_PATH_COVERAGE` is intended for tests/CI only (it should not be set in production services).
-
-Devcontainer:
-
-- Use `.devcontainer/` to get a Linux environment with `kcov` and `systemd-analyze` for CI parity.
+Repo development, linting, and tests are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Contributing
 
