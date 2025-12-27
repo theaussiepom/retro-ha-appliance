@@ -102,10 +102,10 @@ finally:
 PY
 }
 
-emit_combo_a_then_start() {
+emit_combo_start_then_a() {
 	local fifo_path="$1"
-	local a_code="${2:-304}"
-	local start_code="${3:-315}"
+	local start_code="${2:-315}"
+	local a_code="${3:-304}"
 
 	python3 - "$fifo_path" "$a_code" "$start_code" <<'PY'
 import errno
@@ -115,8 +115,8 @@ import sys
 import time
 
 fifo_path = sys.argv[1]
-a_code = int(sys.argv[2])
-start_code = int(sys.argv[3])
+start_code = int(sys.argv[2])
+a_code = int(sys.argv[3])
 
 fmt = "llHHi"  # must match listener scripts
 
@@ -143,10 +143,10 @@ if fd is None:
 	raise SystemExit(f"timeout opening fifo for write: {fifo_path}")
 
 try:
-	os.write(fd, payload(a_code))
+	os.write(fd, payload(start_code))
 	# Keep writer open so the reader doesn't see EOF between events.
 	time.sleep(0.05)
-	os.write(fd, payload(start_code))
+	os.write(fd, payload(a_code))
 finally:
 	os.close(fd)
 PY
@@ -302,6 +302,8 @@ assert_calls_contains() {
 	export SYSTEMCTL_ACTIVE_RETRO=0
 	# Make the combo window deterministic.
 	export KIOSK_RETROPIE_COMBO_WINDOW_SEC=2
+	# Explicitly set the new exit-sequence config (default is Start then A).
+	export RETROPIE_EXIT_SEQUENCE_CODES=315,304
 	# Ensure the listener writes PATH entries to the suite-wide path log.
 	export KIOSK_RETROPIE_PATH_COVERAGE=1
 	export KIOSK_RETROPIE_CALLS_FILE_APPEND="$KIOSK_RETROPIE_PATHS_FILE"
@@ -315,8 +317,10 @@ assert_calls_contains() {
 
 	wait_for_log_pattern "$LISTENER_LOG" "Listening on" 3 || true
 
-	# Press exit second button then exit trigger inside the combo window.
-	emit_combo_a_then_start "$fifo" "${KIOSK_RETROPIE_RETRO_EXIT_SECOND_CODE:-304}" "${KIOSK_RETROPIE_RETRO_EXIT_TRIGGER_CODE:-315}"
+	# Exit sequence is Start then A: 315,304.
+	emit_press "$fifo" 315
+	sleep 0.05
+	emit_press "$fifo" 304
 	wait_for_exit "$LISTENER_PID" 5 "$LISTENER_LOG"
 
 	assert_calls_contains "systemctl stop retro-mode.service"

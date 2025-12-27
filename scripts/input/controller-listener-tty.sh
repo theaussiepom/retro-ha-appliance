@@ -130,6 +130,12 @@ def main() -> int:
 			except OSError:
 				continue
 
+			# EOF (e.g. FIFO writer closed): avoid a tight loop where the fd stays readable.
+			# This also lets tests reconnect a writer to emit the next event.
+			if not data:
+				time.sleep(0.05)
+				continue
+
 			# Process in chunks.
 			for off in range(0, len(data) - (len(data) % size), size):
 				_sec, _usec, etype, code, value = struct.unpack_from(fmt, data, off)
