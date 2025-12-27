@@ -13,7 +13,7 @@ setup() {
 	# Allow running installer logic without root.
 	export KIOSK_RETROPIE_ALLOW_NON_ROOT=1
 	export KIOSK_RETROPIE_DRY_RUN=1
-	write_config_env $'KIOSK_URL=https://example.invalid\nNFS_SERVER=server'
+	write_config_env $'KIOSK_URL=https://example.invalid'
 }
 
 teardown() {
@@ -44,10 +44,8 @@ teardown() {
 	assert_file_contains "$TEST_ROOT/calls.log" "PATH install:missing-kiosk-url"
 }
 
-@test "install.sh fails when NFS_SERVER missing" {
+@test "install.sh succeeds when NFS_SERVER missing" {
 	write_config_env $'KIOSK_URL=https://example.invalid'
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/install.sh"
-	assert_failure
-	assert_output --partial "NFS_SERVER is required"
-	assert_file_contains "$TEST_ROOT/calls.log" "PATH install:missing-nfs-server"
+	assert_success
 }

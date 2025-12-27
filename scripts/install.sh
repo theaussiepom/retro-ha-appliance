@@ -66,17 +66,13 @@ ensure_kiosk_profile_dir() {
 }
 
 validate_required_config() {
-  # Configuration is mandatory, but runtime use of NFS is fail-open.
+  # Configuration is mandatory for the kiosk URL.
+  # NFS is optional; features that rely on it are no-ops when NFS_SERVER is unset.
   local url="${KIOSK_URL:-}"
-  local nfs_server="${NFS_SERVER:-}"
 
   if [[ -z "$url" ]]; then
     cover_path "install:missing-kiosk-url"
     die "KIOSK_URL is required"
-  fi
-  if [[ -z "$nfs_server" ]]; then
-    cover_path "install:missing-nfs-server"
-    die "NFS_SERVER is required"
   fi
   cover_path "install:config-ok"
 }
@@ -128,9 +124,6 @@ install_files() {
   run_cmd mkdir -p "$lib_dir/lib"
   run_cmd mkdir -p "$bin_dir"
   run_cmd mkdir -p "$systemd_dir"
-
-  # Install bootstrap + core installer assets.
-  run_cmd install -m 0755 "$repo_root/scripts/bootstrap.sh" "$lib_dir/bootstrap.sh"
 
   # Install shared lib helpers.
   if [[ -d "$repo_root/scripts/lib" ]]; then
@@ -206,7 +199,6 @@ install_files() {
   fi
 
   # Install systemd units.
-  run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-install.service" "$systemd_dir/kiosk-retropie-install.service"
   if [[ -f "$repo_root/systemd/kiosk-retropie-led-mqtt.service" ]]; then
     run_cmd install -m 0644 "$repo_root/systemd/kiosk-retropie-led-mqtt.service" "$systemd_dir/kiosk-retropie-led-mqtt.service"
   fi
@@ -319,7 +311,7 @@ main() {
   log "Installing files"
   install_files
 
-  if [[ "${RETROPIE_INSTALL:-${KIOSK_RETROPIE_INSTALL_RETROPIE:-1}}" == "1" ]]; then
+  if [[ "${RETROPIE_INSTALL:-1}" == "1" ]]; then
     cover_path "install:optional-retropie-enabled"
     log "Installing RetroPie"
     run_cmd "${KIOSK_RETROPIE_LIBDIR:-$(kiosk_retropie_path /usr/local/lib/kiosk-retropie)}/install-retropie.sh" || log "RetroPie install failed (continuing)"

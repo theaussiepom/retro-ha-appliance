@@ -86,13 +86,14 @@ def main() -> int:
 	else:
 		exit_sequence_codes = [legacy_exit_trigger_code, legacy_exit_second_code]
 	combo_window_sec = float(os.environ.get("RETROPIE_COMBO_WINDOW_SEC") or os.environ.get("KIOSK_RETROPIE_COMBO_WINDOW_SEC") or "0.75")
-	debounce_sec = float(os.environ.get("RETROPIE_START_DEBOUNCE_SEC") or os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC") or "1.0")
+	debounce_sec = float(os.environ.get("RETROPIE_ACTION_DEBOUNCE_SEC") or "1.0")
 	max_triggers = int(os.environ.get("RETROPIE_MAX_TRIGGERS") or os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS") or "0")
 	max_loops = int(os.environ.get("RETROPIE_MAX_LOOPS") or os.environ.get("KIOSK_RETROPIE_MAX_LOOPS") or "0")
 	last_fire = 0.0
 	last_start = 0.0
-	exit_seq_start = 0.0
-	exit_seq_index = 0
+	pressed: set[int] = set()
+	press_times: dict[int, float] = {}
+	exit_combo_armed = True
 	triggers = 0
 	loops = 0
 
@@ -139,70 +140,70 @@ def main() -> int:
 			# Process in chunks.
 			for off in range(0, len(data) - (len(data) % size), size):
 				_sec, _usec, etype, code, value = struct.unpack_from(fmt, data, off)
-				if etype == 1 and value == 1:
-					now = time.time()
-					last_start = now
+				if etype != 1:
+					continue
 
-					retro_active = is_active("retro-mode.service")
+				# Only track press/release; ignore auto-repeat.
+				if value not in (0, 1):
+					continue
 
-					# Exit sequence behavior: when Retro is active, require the full sequence
-					# of button codes within combo_window_sec.
-					if retro_active and exit_sequence_codes:
-						# Reset on timeout.
-						if exit_seq_index and (now - exit_seq_start) > combo_window_sec:
-							exit_seq_index = 0
+				now = time.time()
+				last_start = now
 
-						# Start / continue a matching sequence.
-						if exit_seq_index == 0:
-							if code == exit_sequence_codes[0]:
-								exit_seq_start = now
-								exit_seq_index = 1
-						else:
-							if code == exit_sequence_codes[exit_seq_index]:
-								exit_seq_index += 1
-							else:
-								# Wrong code resets; allow current code to restart.
-								exit_seq_index = 1 if code == exit_sequence_codes[0] else 0
-								exit_seq_start = now if exit_seq_index else 0.0
+				if value == 1:
+					pressed.add(code)
+					press_times.setdefault(code, now)
+				else:
+					pressed.discard(code)
+					press_times.pop(code, None)
+					if exit_sequence_codes and not all(c in pressed for c in exit_sequence_codes):
+						exit_combo_armed = True
+					continue
 
-						if exit_seq_index == len(exit_sequence_codes):
-							# Debounce actions (not individual presses).
-							if now - last_fire >= debounce_sec:
+				retro_active = is_active("retro-mode.service")
+
+				# Exit combo behavior: when Retro is active, require the configured buttons
+				# to be pressed *together* (held simultaneously). Order doesn't matter.
+				# combo_window_sec defines the max allowed time between first and last press.
+				if retro_active and exit_sequence_codes:
+					if all(c in pressed for c in exit_sequence_codes):
+						times = [press_times.get(c, now) for c in exit_sequence_codes]
+						if (max(times) - min(times)) <= combo_window_sec:
+							if exit_combo_armed and (now - last_fire) >= debounce_sec:
+								exit_combo_armed = False
 								last_fire = now
-								log("Exit sequence matched -> returning to kiosk mode")
+								log("Exit combo matched -> returning to kiosk mode")
 								cover_path("controller-tty:trigger-stop-retro")
 								systemctl("stop", "retro-mode.service")
 								cover_path("controller-tty:trigger-start-kiosk")
 								systemctl("start", "kiosk.service")
 								triggers += 1
-								exit_seq_index = 0
-								exit_seq_start = 0.0
 								if max_triggers and triggers >= max_triggers:
 									return 0
-							continue
+					continue
 
-					# Default behavior: Enter Retro when not already active.
-					if retro_active:
-						continue
+				# Default behavior: Enter Retro when not already active.
+				if retro_active:
+					continue
 
-					# Only enter Retro when the *enter* trigger is pressed.
-					if code != enter_trigger_code:
-						continue
+				# Only enter Retro when the *enter* trigger is pressed.
+				if code != enter_trigger_code:
+					continue
 
-					# Debounce actions.
-					if now - last_fire < debounce_sec:
-						continue
-					last_fire = now
+				# Debounce actions.
+				if now - last_fire < debounce_sec:
+					continue
+				last_fire = now
 
-					log("Enter Retro trigger pressed -> entering RetroPie mode")
-					# Stop kiosk first; Conflicts also enforces this.
-					cover_path("controller-tty:trigger-stop-kiosk")
-					systemctl("stop", "kiosk.service")
-					cover_path("controller-tty:trigger-start-retro")
-					systemctl("start", "retro-mode.service")
-					triggers += 1
-					if max_triggers and triggers >= max_triggers:
-						return 0
+				log("Enter Retro trigger pressed -> entering RetroPie mode")
+				# Stop kiosk first; Conflicts also enforces this.
+				cover_path("controller-tty:trigger-stop-kiosk")
+				systemctl("stop", "kiosk.service")
+				cover_path("controller-tty:trigger-start-retro")
+				systemctl("start", "retro-mode.service")
+				triggers += 1
+				if max_triggers and triggers >= max_triggers:
+					return 0
 
 
 if __name__ == "__main__":

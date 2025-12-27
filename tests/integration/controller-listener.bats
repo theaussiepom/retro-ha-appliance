@@ -12,7 +12,7 @@ setup() {
 	setup_test_root
 
 	# Deterministic behavior: no debounce and exit after first trigger.
-	export RETROPIE_START_DEBOUNCE_SEC=0
+	export RETROPIE_ACTION_DEBOUNCE_SEC=0
 	export RETROPIE_MAX_TRIGGERS=1
 	# Safety: avoid infinite loops if something goes wrong.
 	export RETROPIE_MAX_LOOPS=200

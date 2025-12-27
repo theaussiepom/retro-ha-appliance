@@ -21,15 +21,10 @@ source "$LIB_DIR/common.sh"
 main() {
   export KIOSK_RETROPIE_LOG_PREFIX="mount-nfs-backup"
 
-  local enabled="${RETROPIE_SAVE_BACKUP_ENABLED:-${KIOSK_RETROPIE_SAVE_BACKUP_ENABLED:-1}}"
+  local enabled="${RETROPIE_SAVE_BACKUP_ENABLED:-1}"
   if [[ "$enabled" != "1" ]]; then
     cover_path "mount-nfs-backup:disabled"
     exit 0
-  fi
-
-  if [[ -n "${NFS_SAVE_BACKUP_PATH:-}" || -n "${RETROPIE_SAVE_BACKUP_NFS_PATH:-${KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH:-}}" ]]; then
-    cover_path "mount-nfs-backup:legacy-backup-path-ignored"
-    log "Legacy backup NFS path variables are ignored; using NFS_SERVER share layout"
   fi
 
   cover_path "mount-nfs-backup:delegate"

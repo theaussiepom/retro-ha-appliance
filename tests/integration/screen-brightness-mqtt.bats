@@ -82,7 +82,6 @@ make_fake_backlight() {
 
 	# Create a fake sysfs backlight under KIOSK_RETROPIE_ROOT.
 	make_fake_backlight "test" "200" "0"
-	export KIOSK_BACKLIGHT_NAME="test"
 
 	# Provide stubs and override mosquitto_sub to emit one set message.
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
@@ -151,7 +150,6 @@ EOF
 	mkdir -p "$d"
 	echo 0 >"$d/brightness"
 	# no max_brightness
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
 	write_mosquitto_sub_stub ""
@@ -170,7 +168,6 @@ EOF
 	mkdir -p "$d"
 	echo 0 >"$d/brightness"
 	echo 0 >"$d/max_brightness"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
 	write_mosquitto_sub_stub ""
@@ -185,7 +182,6 @@ EOF
 	export KIOSK_RETROPIE_DRY_RUN=1
 
 	make_fake_backlight "test" "100" "1000"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
 	write_mosquitto_sub_stub ""
@@ -201,7 +197,6 @@ EOF
 	export KIOSK_RETROPIE_DRY_RUN=1
 
 	make_fake_backlight "test" "100" "0"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname mosquitto_sub mosquitto_pub
 	write_mosquitto_sub_stub "kiosk-retropie/screen/brightness/set 101"
@@ -239,7 +234,6 @@ EOF
 	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
-	unset KIOSK_RETROPIE_BACKLIGHT_NAME
 
 	make_fake_backlight "auto0" "100" "0"
 
@@ -251,38 +245,6 @@ EOF
 
 	# Dry-run write path should record the write call.
 	assert_file_contains "$TEST_ROOT/calls.log" "write_brightness"
-}
-
-@test "screen-brightness-mqtt records backlight-name-file when name is set to brightness" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
-	export MQTT_HOST="mqtt.local"
-	export KIOSK_RETROPIE_DRY_RUN=1
-
-	make_fake_backlight "auto0" "100" "0"
-	export KIOSK_BACKLIGHT_NAME="brightness"
-
-	make_isolated_path_with_stubs dirname mosquitto_pub
-	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
-
-	run handle_set "50" "kiosk-retropie"
-	assert_success
-	assert_file_contains "$TEST_ROOT/calls.log" "PATH screen-brightness-mqtt:backlight-name-file"
-}
-
-@test "screen-brightness-mqtt records backlight-name-missing when named dir does not exist" {
-	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
-	export MQTT_HOST="mqtt.local"
-	export KIOSK_RETROPIE_DRY_RUN=1
-
-	make_fake_backlight "auto0" "100" "0"
-	export KIOSK_BACKLIGHT_NAME="does-not-exist"
-
-	make_isolated_path_with_stubs dirname mosquitto_pub
-	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
-
-	run handle_set "50" "kiosk-retropie"
-	assert_success
-	assert_file_contains "$TEST_ROOT/calls.log" "PATH screen-brightness-mqtt:backlight-name-missing"
 }
 
 @test "screen-brightness-mqtt fails when no backlight exists" {
@@ -301,7 +263,6 @@ EOF
 	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	local d
 	d="$TEST_ROOT/sys/class/backlight/test"
@@ -317,7 +278,6 @@ EOF
 	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_ENABLED=1
 	export MQTT_HOST="mqtt.local"
 	export KIOSK_RETROPIE_DRY_RUN=1
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	local d
 	d="$TEST_ROOT/sys/class/backlight/test"
@@ -335,7 +295,6 @@ EOF
 	export KIOSK_RETROPIE_DRY_RUN=1
 
 	make_fake_backlight "test" "255" "10"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname mosquitto_pub
 	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
@@ -352,7 +311,6 @@ EOF
 
 	# Create a fake sysfs backlight under KIOSK_RETROPIE_ROOT.
 	make_fake_backlight "test" "100" "0"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname
 	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
@@ -385,7 +343,6 @@ EOF
 	export KIOSK_RETROPIE_DRY_RUN=1
 
 	make_fake_backlight "test" "100" "20"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname
 	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"
@@ -432,7 +389,6 @@ EOF
 	export KIOSK_RETROPIE_SCREEN_BRIGHTNESS_MQTT_MAX_LOOPS=1
 
 	make_fake_backlight "test" "100" "0"
-	export KIOSK_RETROPIE_BACKLIGHT_NAME="test"
 
 	make_isolated_path_with_stubs dirname
 	source "$KIOSK_RETROPIE_REPO_ROOT/scripts/screen/screen-brightness-mqtt.sh"

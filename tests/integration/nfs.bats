@@ -33,9 +33,7 @@ refute_file_contains() {
 }
 
 @test "mount-nfs calls mount when not mounted" {
-	export NFS_SERVER=nas
-	# Legacy variable still supported (treated as share root).
-	export NFS_ROMS_PATH=/export/roms
+	export NFS_SERVER=nas:/export/roms
 
 	# Not mounted initially.
 	export MOUNTPOINT_PATHS=$''
@@ -44,7 +42,6 @@ refute_file_contains() {
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
 	assert_success
 	assert_file_contains "$TEST_ROOT/calls.log" "mount -t nfs"
-	assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:legacy-roms-path"
 	assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:dirs-ready"
 }
 
@@ -57,8 +54,7 @@ refute_file_contains() {
 	export MOUNTPOINT_PATHS="$mp\n"
 
 	# Allowlist only nes.
-	export KIOSK_RETROPIE_ROMS_SYSTEMS="nes"
-	export KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS="snes"
+	export RETROPIE_ROMS_SYSTEMS="nes"
 
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
 	assert_success

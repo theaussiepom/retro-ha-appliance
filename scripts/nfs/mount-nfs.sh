@@ -31,25 +31,33 @@ main() {
   # Default export path when NFS_SERVER is a bare host.
   local default_export_path="/export/kiosk-retropie"
 
-  # Back-compat: allow legacy NFS_ROMS_PATH, treating it as the share root.
-  # (Deprecated in favor of NFS_SERVER=host:/export/path).
-  if [[ -n "${NFS_ROMS_PATH:-}" ]]; then
-    cover_path "mount-nfs:legacy-roms-path"
-    log "Using legacy NFS_ROMS_PATH as share root; prefer NFS_SERVER=host:/export/path"
-    server="$server_spec"
-    export_path="${NFS_ROMS_PATH}"
-  elif [[ -n "$server_spec" && "$server_spec" == *":/"* ]]; then
+  if [[ -n "$server_spec" && "$server_spec" == *":"* && "$server_spec" != *":"*":"* ]]; then
+    # Accept host:path forms without a leading slash (e.g. host:export/path).
+    # Avoid mis-parsing IPv6-style values that contain multiple colons.
     printf -v server '%s' "${server_spec%%:*}"
-    printf -v export_path '%s' "${server_spec#*:}"
+    local export_part
+    printf -v export_part '%s' "${server_spec#*:}"
+
+    if [[ -z "$export_part" ]]; then
+      cover_path "mount-nfs:invalid-server-spec"
+      log "Invalid NFS_SERVER (missing export path after colon): $server_spec"
+      exit 2
+    fi
+
+    if [[ "$export_part" == /* ]]; then
+      export_path="$export_part"
+    else
+      export_path="/$export_part"
+    fi
   else
     server="$server_spec"
     export_path="$default_export_path"
   fi
 
   if [[ -z "$server" ]]; then
-    cover_path "mount-nfs:missing-config"
-    log "NFS config missing (set NFS_SERVER to either host or host:/export/path)"
-    exit 2
+    cover_path "mount-nfs:disabled"
+    log "NFS disabled (NFS_SERVER not set); skipping mount"
+    exit 0
   fi
 
   require_cmd mount

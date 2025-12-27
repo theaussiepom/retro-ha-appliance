@@ -18,10 +18,19 @@ teardown() {
 }
 
 @test "mount-nfs records not-configured path" {
-  unset NFS_SERVER NFS_ROMS_PATH
+  unset NFS_SERVER
+  run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
+  assert_success
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:disabled"
+}
+
+@test "mount-nfs records invalid-server-spec path" {
+  export NFS_SERVER="server:"
+
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
   assert_failure
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:missing-config"
+  assert_equal "$status" 2
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:invalid-server-spec"
 }
 
 @test "mount-nfs records already-mounted path" {
@@ -67,24 +76,24 @@ teardown() {
 }
 
 @test "mount-nfs-backup disabled path" {
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0
+  export RETROPIE_SAVE_BACKUP_ENABLED=0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:disabled"
 }
 
 @test "mount-nfs-backup not-configured path" {
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export RETROPIE_SAVE_BACKUP_ENABLED=1
   export KIOSK_RETROPIE_DRY_RUN=0
-  unset KIOSK_RETROPIE_SAVE_BACKUP_NFS_SERVER KIOSK_RETROPIE_SAVE_BACKUP_NFS_PATH NFS_SERVER NFS_ROMS_PATH NFS_SAVE_BACKUP_PATH
+  unset NFS_SERVER
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs-backup.sh"
-  assert_failure
+  assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs-backup:delegate"
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:missing-config"
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:disabled"
 }
 @test "mount-nfs-backup delegates to mount-nfs when enabled" {
   export KIOSK_RETROPIE_DRY_RUN=0
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export RETROPIE_SAVE_BACKUP_ENABLED=1
   export NFS_SERVER=server:/export/kiosk-retropie
   export MOUNT_EXIT_CODE=0
 
@@ -111,34 +120,34 @@ teardown() {
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:not-mounted"
 }
 
-@test "sync-roms with allowlist + exclude + delete" {
+@test "sync-roms records src-missing when mounted but roms dir absent" {
+  export NFS_SERVER=server:/export/kiosk-retropie
+
+  # Pretend the share is mounted but do not create the ROMs dir.
+  # mount-nfs exits early on already-mounted and will not mkdir -p roms/.
+  export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-nfs\n"
+  rm -rf "$TEST_ROOT/mnt/kiosk-retropie-nfs/roms"
+
+  run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
+  assert_success
+  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:src-missing"
+}
+
+@test "sync-roms with allowlist + delete" {
   export NFS_SERVER=server:/export/kiosk-retropie
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-nfs\n"
 
   # Fake NFS tree under KIOSK_RETROPIE_ROOT.
   mkdir -p "$TEST_ROOT/mnt/kiosk-retropie-nfs/roms/nes" "$TEST_ROOT/mnt/kiosk-retropie-nfs/roms/snes"
-  export KIOSK_RETROPIE_ROMS_SYSTEMS="nes,snes"
-  export KIOSK_RETROPIE_ROMS_EXCLUDE_SYSTEMS="snes"
-  export KIOSK_RETROPIE_ROMS_SYNC_DELETE=1
+  export RETROPIE_ROMS_SYSTEMS="nes,snes"
+  export RETROPIE_ROMS_SYNC_DELETE=1
 
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
   assert_success
 
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:delete-enabled"
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:allowlist"
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:excluded"
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:chown"
-}
-
-@test "sync-roms records legacy-subdir-ignored + src-missing" {
-  export NFS_SERVER=server:/export/kiosk-retropie
-  export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-nfs\n"
-
-  export KIOSK_RETROPIE_NFS_ROMS_SUBDIR=subdir
-  run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
-  assert_success
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:legacy-subdir-ignored"
-  assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:src-missing"
 }
 
 @test "sync-roms records discover + missing-system" {
@@ -146,7 +155,7 @@ teardown() {
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-nfs\n"
 
   mkdir -p "$TEST_ROOT/mnt/kiosk-retropie-nfs/roms/nes"
-  export KIOSK_RETROPIE_ROMS_SYSTEMS="nes,snes"
+  export RETROPIE_ROMS_SYSTEMS="nes,snes"
 
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
   assert_success
@@ -154,14 +163,14 @@ teardown() {
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:missing-system"
 
   # Now switch to discovery mode.
-  unset KIOSK_RETROPIE_ROMS_SYSTEMS
+  unset RETROPIE_ROMS_SYSTEMS
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/sync-roms.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH sync-roms:discover"
 }
 
 @test "save-backup records rsync-missing when mounted but rsync absent" {
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export RETROPIE_SAVE_BACKUP_ENABLED=1
   # systemctl stub uses 0 for active; set to 1 = inactive (not in Retro mode).
   export SYSTEMCTL_ACTIVE_RETRO=1
 
@@ -178,7 +187,7 @@ teardown() {
 }
 
 @test "save-backup backup-saves and backup-states with delete" {
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export RETROPIE_SAVE_BACKUP_ENABLED=1
   # Not in Retro mode.
   export SYSTEMCTL_ACTIVE_RETRO=1
 
@@ -187,7 +196,7 @@ teardown() {
   export MOUNTPOINT_PATHS="$TEST_ROOT/mnt/kiosk-retropie-nfs\n"
 
   mkdir -p "$TEST_ROOT/var/lib/kiosk-retropie/retropie/saves" "$TEST_ROOT/var/lib/kiosk-retropie/retropie/states"
-  export KIOSK_RETROPIE_SAVE_BACKUP_DELETE=1
+  export RETROPIE_SAVE_BACKUP_DELETE=1
 
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/save-backup.sh"
   assert_success
@@ -197,12 +206,12 @@ teardown() {
 }
 
 @test "save-backup records disabled/retro-active/not-mounted paths" {
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=0
+  export RETROPIE_SAVE_BACKUP_ENABLED=0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/save-backup.sh"
   assert_success
   assert_file_contains "$TEST_ROOT/calls.log" "PATH save-backup:disabled"
 
-  export KIOSK_RETROPIE_SAVE_BACKUP_ENABLED=1
+  export RETROPIE_SAVE_BACKUP_ENABLED=1
   export SYSTEMCTL_ACTIVE_RETRO=0
   run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/save-backup.sh"
   assert_success

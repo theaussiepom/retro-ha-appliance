@@ -3,17 +3,6 @@
 #
 # This file will be expanded as we add more path markers/tests.
 
-bootstrap:installed-marker
-bootstrap:network-not-ready
-bootstrap:network-ok
-bootstrap:missing-repo-url
-bootstrap:missing-repo-ref
-bootstrap:clone
-bootstrap:reuse-checkout
-bootstrap:installer-missing
-bootstrap:installer-dry-run
-bootstrap:installer-exec
-
 controller-kiosk:kiosk-not-active
 controller-kiosk:no-devices
 controller-kiosk:listening
@@ -69,7 +58,6 @@ install:user-created
 install:chromium-profile-fixed
 install:config-ok
 install:missing-kiosk-url
-install:missing-nfs-server
 install:chromium-browser-pkg
 install:chromium-pkg
 install:chromium-none
@@ -133,9 +121,6 @@ led-mqtt:state-same-pwr
 led-mqtt:state-max-loops
 
 screen-brightness-mqtt:backlight-auto
-screen-brightness-mqtt:backlight-name
-screen-brightness-mqtt:backlight-name-file
-screen-brightness-mqtt:backlight-name-missing
 screen-brightness-mqtt:disabled
 screen-brightness-mqtt:invalid-payload
 screen-brightness-mqtt:max-invalid
@@ -192,8 +177,8 @@ leds-on:run
 leds-off:run
 
 mount-nfs:already-mounted
-mount-nfs:missing-config
-mount-nfs:legacy-roms-path
+mount-nfs:disabled
+mount-nfs:invalid-server-spec
 mount-nfs:mount-attempt
 mount-nfs:mount-failed
 mount-nfs:mount-success
@@ -201,17 +186,14 @@ mount-nfs:mkdir-failed
 mount-nfs:dirs-ready
 
 mount-nfs-backup:disabled
-mount-nfs-backup:legacy-backup-path-ignored
 mount-nfs-backup:delegate
 
 sync-roms:rsync-missing
 sync-roms:not-mounted
-sync-roms:legacy-subdir-ignored
 sync-roms:src-missing
 sync-roms:delete-enabled
 sync-roms:allowlist
 sync-roms:discover
-sync-roms:excluded
 sync-roms:missing-system
 sync-roms:chown
 
