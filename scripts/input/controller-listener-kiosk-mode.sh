@@ -61,7 +61,7 @@ def devices() -> list[str]:
 def main() -> int:
 	# Configurable controller codes.
 	enter_code = int(os.environ.get("RETROPIE_ENTER_TRIGGER_CODE") or os.environ.get("KIOSK_RETROPIE_RETRO_ENTER_TRIGGER_CODE") or "315")
-	debounce_sec = float(os.environ.get("RETROPIE_START_DEBOUNCE_SEC") or os.environ.get("KIOSK_RETROPIE_START_DEBOUNCE_SEC") or "1.0")
+	debounce_sec = float(os.environ.get("RETROPIE_ACTION_DEBOUNCE_SEC") or "1.0")
 	max_triggers = int(os.environ.get("RETROPIE_MAX_TRIGGERS") or os.environ.get("KIOSK_RETROPIE_MAX_TRIGGERS") or "0")
 	max_loops = int(os.environ.get("RETROPIE_MAX_LOOPS") or os.environ.get("KIOSK_RETROPIE_MAX_LOOPS") or "0")
 	last_fire = 0.0

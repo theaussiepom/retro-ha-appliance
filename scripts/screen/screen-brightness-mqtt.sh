@@ -80,26 +80,6 @@ backlight_dir() {
   local sysfs_root
   sysfs_root="$(kiosk_retropie_path /sys/class/backlight)"
 
-  local name="${KIOSK_BACKLIGHT_NAME:-${KIOSK_RETROPIE_BACKLIGHT_NAME:-}}"
-  if [[ -n "$name" ]]; then
-    # Common misconfig: setting this to the brightness *file* name ("brightness")
-    # instead of the backlight directory name (e.g. "rpi_backlight").
-    local candidate="${sysfs_root}/${name}"
-    if [[ -d "$candidate" ]]; then
-      cover_path "screen-brightness-mqtt:backlight-name"
-      printf '%s\n' "$candidate"
-      return 0
-    fi
-
-    if [[ "$name" == "brightness" ]]; then
-      cover_path "screen-brightness-mqtt:backlight-name-file"
-      log "KIOSK_BACKLIGHT_NAME=brightness looks like a file; auto-detecting backlight directory"
-    else
-      cover_path "screen-brightness-mqtt:backlight-name-missing"
-      log "Backlight dir not found: $candidate; auto-detecting backlight directory"
-    fi
-  fi
-
   cover_path "screen-brightness-mqtt:backlight-auto"
   shopt -s nullglob
   local d

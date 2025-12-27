@@ -52,7 +52,7 @@ ci_list_shell_files() {
 }
 
 ci_list_yaml_files() {
-  ci_find0 .github cloud-init examples -- -type f \( -name '*.yml' -o -name '*.yaml' \)
+  ci_find0 .github examples -- -type f \( -name '*.yml' -o -name '*.yaml' \)
 }
 
 ci_list_unit_files() {
