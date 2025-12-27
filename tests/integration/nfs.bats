@@ -26,10 +26,11 @@ refute_file_contains() {
 	! grep -Fq -- "$needle" "$file"
 }
 
-@test "mount-nfs is fail-open when NFS not configured" {
+@test "mount-nfs is a no-op when NFS not configured" {
 	run bash "$KIOSK_RETROPIE_REPO_ROOT/scripts/nfs/mount-nfs.sh"
-	assert_failure
-	assert_output --partial "NFS config missing"
+	assert_success
+	assert_output --partial "NFS disabled"
+	assert_file_contains "$TEST_ROOT/calls.log" "PATH mount-nfs:disabled"
 }
 
 @test "mount-nfs calls mount when not mounted" {
